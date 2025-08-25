@@ -102,11 +102,12 @@ export default function Home() {
     // 获取用户邀请数量
     const fetchUserInvitedCount = async () => {
         if (!user?.id) return;
+        console.log('user.id', user.id);
 
         try {
             const { data, error } = await supabase
                 .from('invitation')
-                .select('*', { count: 'exact' })
+                .select('*')
                 .eq('inviter_id', user.id);
 
             if (error) {
@@ -114,11 +115,15 @@ export default function Home() {
                 return;
             }
 
+            console.log('data', data);
+
             const invitedCount = data?.length || 0;
+            console.log('invitedCount', invitedCount);
             setUserInvitedCount(invitedCount);
 
             // 计算 MOVA token：每邀请一个人 +100，最多1000
             const movaTokens = Math.min(invitedCount * 100, 1000);
+            console.log('movaTokens', movaTokens);
             setUserMovaTokens(movaTokens);
         } catch (error) {
             console.error('Error fetching user invited count:', error);
@@ -442,7 +447,7 @@ export default function Home() {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="px-3 py-4 mt-4 bg-[#C1FF72] text-black border-none rounded-full text-md font-bold cursor-pointer transition-all hover:bg-green-300 hover:transform hover:-translate-y-1 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:transform-none"
+                                    className="px-3 py-4 mt-4 bg-[#C1FF72] text-black border-none rounded-full text-md font-bold cursor-pointer transition-all hover:transform hover:-translate-y-1 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:transform-none"
                                 >
                                     {loading ? 'GENERATING...' : 'GENERATE YOUR EXCLUSIVE POSTER'}
                                 </button>
@@ -530,7 +535,7 @@ export default function Home() {
                                 </div>
                             </div>
 
-                            <button className="bg-[#C1FF724D] mx-auto text-white px-4 py-2 font-semibold cursor-pointer transition-all hover:bg-[#C1FF72] hover:text-gray-900 text-xs">
+                            <button className="bg-[#C1FF724D] mx-auto text-white px-4 py-2 font-semibold text-xs">
                                 EARN UP TO 1000 MOVA
                             </button>
                         </div>
@@ -546,7 +551,7 @@ export default function Home() {
                     style={{ backgroundImage: 'url(/static/guest_bg.svg)' }}
                 ></div>
 
-                <img src="/static/logos.svg" alt="MOVA" className='w-full  relative z-29' width={100} height={277} />
+                <img src="/static/logos.svg" alt="MOVA" className='w-full lg:max-w-6xl mx-auto relative z-29' width={100} height={277} />
 
                 {/* 嘉宾背景渐变遮罩 - 上下过渡效果 */}
                 <div className="absolute w-full h-[51.06rem] top-56 left-0 inset-0 z-15 bg-gradient-to-b from-black/90 via-transparent to-black/80"></div>
