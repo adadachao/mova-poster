@@ -130,7 +130,6 @@ export default function Home() {
                 .from('invitation')
                 .select('*')
                 .eq('user_id', user.id)
-                .eq('inviter_id', inviteId);
 
             if (invitationData && invitationData.length > 0) {
                 console.log('invitationData', invitationData);
@@ -288,7 +287,7 @@ export default function Home() {
 
     // 海报生成完成回调
     const handlePosterGenerated = (dataUrl: string) => {
-        console.log('dataUrl', dataUrl);
+        // console.log('dataUrl', dataUrl);
     };
 
     const handlePosterClose = () => {
