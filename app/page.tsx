@@ -182,6 +182,11 @@ export default function Home() {
                 console.log('invitationData', invitationData);
                 setShowViewMyPosterButton(true);
                 setMyPosterData(invitationData[0]);
+
+                setName(invitationData[0].real_name);
+                setXName(invitationData[0].x_name);
+                setWechatName(invitationData[0].wechat_name);
+                setWalletAddress(invitationData[0].wallet_address);
             }
         } catch (error) {
             console.error('Error fetching user invited count:', error);
