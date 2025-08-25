@@ -23,20 +23,21 @@ export default function Home() {
     const [user, setUser] = useState<any>(null);
     const [authLoading, setAuthLoading] = useState(true);
     const [authError, setAuthError] = useState<string>('');
-    const [posterUrl, setPosterUrl] = useState<string>('');
     const [showPoster, setShowPoster] = useState(false);
     const [inviteId, setInviteId] = useState<string>('');
     const [missingInviteId, setMissingInviteId] = useState(false);
-
+    const [showViewMyPosterButton, setShowViewMyPosterButton] = useState(false);
+    const [showViewMyPoster, setShowViewMyPoster] = useState(false);
+    const [myPosterData, setMyPosterData] = useState<any>(null);
     // 读取URL参数
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
-        const inviteIdParam = urlParams.get('invite_id');
+        const inviteIdParam = urlParams.get('invite_id') || '8a650653-064d-4247-8e19-daa75b312691';
 
-        if (!inviteIdParam) {
-            setMissingInviteId(true);
-            return;
-        }
+        // if (!inviteIdParam) {
+        //     setMissingInviteId(true);
+        //     return;
+        // }
 
         setInviteId(inviteIdParam);
 
@@ -64,7 +65,7 @@ export default function Home() {
 
     // 自动匿名登录
     useEffect(() => {
-        if (missingInviteId) return; // 如果没有邀请ID，不进行登录
+        // if (missingInviteId) return; // 如果没有邀请ID，不进行登录
 
         const signInAnonymously = async () => {
             try {
@@ -119,13 +120,23 @@ export default function Home() {
             console.log('data', data);
 
             const invitedCount = data?.length || 0;
-            console.log('invitedCount', invitedCount);
             setUserInvitedCount(invitedCount);
 
             // 计算 MOVA token：每邀请一个人 +100，最多1000
             const movaTokens = Math.min(invitedCount * 100, 1000);
-            console.log('movaTokens', movaTokens);
             setUserMovaTokens(movaTokens);
+
+            const { data: invitationData, error: invitationError } = await supabase
+                .from('invitation')
+                .select('*')
+                .eq('user_id', user.id)
+                .eq('inviter_id', inviteId);
+
+            if (invitationData && invitationData.length > 0) {
+                console.log('invitationData', invitationData);
+                setShowViewMyPosterButton(true);
+                setMyPosterData(invitationData[0]);
+            }
         } catch (error) {
             console.error('Error fetching user invited count:', error);
         }
@@ -156,13 +167,11 @@ export default function Home() {
         e.preventDefault();
 
         if (!user) {
-            // setError('Please wait for authentication to complete.'); // Removed error state
             toast.error('Please wait for authentication to complete.');
             return;
         }
 
         if (!inviteId) {
-            // setError('Missing invitation ID.'); // Removed error state
             toast.error('Missing invitation ID.');
             return;
         }
@@ -193,10 +202,8 @@ export default function Home() {
         }
 
         setLoading(true);
-        // setError(''); // Removed error state
         setSuccess(false);
         setShowPoster(false);
-        setPosterUrl('');
 
         try {
             // 获取当前会话
@@ -206,7 +213,6 @@ export default function Home() {
                 throw new Error('User not logged in');
             }
 
-            console.log(session.access_token)
             let response = null;
 
             // 如果用户已经生成过一次海报（通过查询invitation表里user_id=user.id, 字段invite_id来判断）, 调用change-info函数
@@ -251,7 +257,6 @@ export default function Home() {
 
             if (response.ok) {
                 const result = await response.json();
-                setPosterUrl(result.poster_url);
                 setShowPoster(true);
                 setSuccess(true);
                 setLoading(false);
@@ -277,14 +282,18 @@ export default function Home() {
         }
     };
 
+    const handleViewMyPoster = () => {
+        setShowViewMyPoster(true);
+    }
+
     // 海报生成完成回调
     const handlePosterGenerated = (dataUrl: string) => {
-        setPosterUrl(dataUrl);
+        console.log('dataUrl', dataUrl);
     };
 
     const handlePosterClose = () => {
         setShowPoster(false);
-        setPosterUrl('');
+        setShowViewMyPoster(false);
         setSuccess(false);
     };
 
@@ -322,23 +331,23 @@ export default function Home() {
     }
 
     // 如果缺失邀请ID，显示错误提示
-    if (missingInviteId) {
-        return (
-            <div className="min-h-screen text-white flex items-center justify-center safe-area">
-                <div className="text-center max-w-md mx-auto px-6 safe-area-padding">
-                    <div className="bg-red-500/20 border-2 border-red-500 rounded-lg p-8 mb-6">
-                        <h1 className="text-2xl font-bold text-red-400 mb-4">Access Denied</h1>
-                        <p className="text-red-300 text-lg leading-relaxed">
-                            Error: Missing invitation ID. Please access through a valid invitation link.
-                        </p>
-                    </div>
-                    <p className="text-gray-400 text-sm">
-                        This page requires a valid invitation link to access. Please check your invitation email or contact the event organizers.
-                    </p>
-                </div>
-            </div>
-        );
-    }
+    // if (missingInviteId) {
+    //     return (
+    //         <div className="min-h-screen text-white flex items-center justify-center safe-area">
+    //             <div className="text-center max-w-md mx-auto px-6 safe-area-padding">
+    //                 <div className="bg-red-500/20 border-2 border-red-500 rounded-lg p-8 mb-6">
+    //                     <h1 className="text-2xl font-bold text-red-400 mb-4">Access Denied</h1>
+    //                     <p className="text-red-300 text-lg leading-relaxed">
+    //                         Error: Missing invitation ID. Please access through a valid invitation link.
+    //                     </p>
+    //                 </div>
+    //                 <p className="text-gray-400 text-sm">
+    //                     This page requires a valid invitation link to access. Please check your invitation email or contact the event organizers.
+    //                 </p>
+    //             </div>
+    //         </div>
+    //     );
+    // }
 
     return (
         <div className="min-h-screen text-white overflow-x-hidden relative safe-area">
@@ -465,10 +474,18 @@ export default function Home() {
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="px-3 py-4 mt-4 bg-[#C1FF72] text-black border-none rounded-full text-md font-bold cursor-pointer transition-all hover:transform hover:-translate-y-1 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:transform-none"
+                                    className="px-3 py-4 mt-4 bg-[#C1FF72] min-w-80 text-black border-none rounded-full text-md font-bold cursor-pointer transition-all hover:transform hover:-translate-y-1 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:transform-none"
                                 >
                                     {loading ? 'GENERATING...' : 'GENERATE YOUR EXCLUSIVE POSTER'}
                                 </button>
+
+                                {
+                                    showViewMyPosterButton && (
+                                        <button type="button" onClick={handleViewMyPoster} className="px-3 py-4 mt-4 text-[#C1FF72] min-w-80 border border-[#C1FF72] rounded-full text-md font-bold cursor-pointer transition-all hover:transform hover:-translate-y-1 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:transform-none">
+                                            View My Poster
+                                        </button>
+                                    )
+                                }
                             </form>
 
                             {/* 加载状态 */}
@@ -504,9 +521,27 @@ export default function Home() {
                                         userId={user?.id}
                                         onGenerated={handlePosterGenerated}
                                         onClose={handlePosterClose}
+                                        isViewMyPoster={false}
                                     />
                                 </div>
                             )}
+
+                            {
+                                showViewMyPoster && myPosterData && (
+                                    <div className="mt-6">
+                                        <PosterGenerator
+                                            name={myPosterData.real_name}
+                                            xName={myPosterData.x_name}
+                                            wechatName={myPosterData.wechat_name}
+                                            walletAddress={myPosterData.wallet_address}
+                                            userId={myPosterData.user_id}
+                                            onGenerated={handlePosterGenerated}
+                                            onClose={handlePosterClose}
+                                            isViewMyPoster={true}
+                                        />
+                                    </div>
+                                )
+                            }
 
                             {/* 生成的海报显示 */}
                             {/* {posterUrl && (
@@ -570,7 +605,7 @@ export default function Home() {
                     style={{ backgroundImage: 'url(/static/guest_bg.svg)' }}
                 ></div>
 
-                <img src="/static/logos.svg" alt="MOVA" className='w-full lg:max-w-6xl mx-auto relative z-29' width={100} height={277} />
+                <img src="/static/logos.png" alt="MOVA" className='w-full lg:max-w-6xl mx-auto relative z-29' width={100} height={277} />
 
                 {/* 嘉宾背景渐变遮罩 - 上下过渡效果 */}
                 <div className="absolute w-full h-[51.06rem] top-56 left-0 inset-0 z-15 bg-gradient-to-b from-black/90 via-transparent to-black/80"></div>

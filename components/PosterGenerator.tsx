@@ -12,9 +12,10 @@ interface PosterGeneratorProps {
   userId?: string; // 添加用户ID用于生成邀请链接
   onGenerated: (dataUrl: string) => void;
   onClose: () => void;
+  isViewMyPoster: boolean;
 }
 
-export default function PosterGenerator({ name, xName, wechatName, walletAddress, userId, onGenerated, onClose }: PosterGeneratorProps) {
+export default function PosterGenerator({ name, xName, wechatName, walletAddress, userId, onGenerated, onClose, isViewMyPoster = false }: PosterGeneratorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string>('');
@@ -306,7 +307,7 @@ export default function PosterGenerator({ name, xName, wechatName, walletAddress
       {isGenerating && (
         <div className="text-center py-8">
           <div className="border-2 border-[#C1FF72]/30 border-t-[#C1FF72] rounded-full w-8 h-8 animate-spin mx-auto mb-4"></div>
-          <p className="text-[#C1FF72] text-sm">Generating your exclusive poster...</p>
+          <p className="text-[#C1FF72] text-sm">{isViewMyPoster ? 'Viewing your poster...' : 'Generating your exclusive poster...'}</p>
         </div>
       )}
       
@@ -331,7 +332,7 @@ export default function PosterGenerator({ name, xName, wechatName, walletAddress
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-center">
-              <h3 className="text-[#C1FF72] text-xl font-bold mb-4">🎉 Poster Generated Successfully!</h3>
+              <h3 className="text-[#C1FF72] text-xl font-bold mb-4">{isViewMyPoster ? 'View Your Poster' : '🎉 Poster Generated Successfully!'}</h3>
               
               <div className="mb-6">
                 <img 
