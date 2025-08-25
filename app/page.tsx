@@ -254,9 +254,9 @@ export default function Home() {
                 setShowPoster(true);
                 setSuccess(true);
                 setLoading(false);
-                
+
                 toast.success('Poster generated successfully!');
-                
+
                 // 更新用户邀请数量
                 fetchUserInvitedCount();
 
@@ -279,6 +279,12 @@ export default function Home() {
     // 海报生成完成回调
     const handlePosterGenerated = (dataUrl: string) => {
         setPosterUrl(dataUrl);
+    };
+
+    const handlePosterClose = () => {
+        setShowPoster(false);
+        setPosterUrl('');
+        setSuccess(false);
     };
 
     // 如果正在认证中，显示加载状态
@@ -345,13 +351,13 @@ export default function Home() {
                 <div className="text-center mb-8">
                     <div className="flex items-center justify-center gap-2">
                         {/* Bitcoin 图标 */}
-                                                    <img src="/static/bitcoin-logo.svg" alt="Bitcoin" width={98} height={24} />
-                            <img src="/static/mova-logo.svg" alt="MOVA" width={75} height={28} />
+                        <img src="/static/bitcoin-logo.svg" alt="Bitcoin" width={98} height={24} />
+                        <img src="/static/mova-logo.svg" alt="MOVA" width={75} height={28} />
                     </div>
                 </div>
 
                 {/* 用户状态提示 */}
-                {user && (
+                {/* {user && (
                     <div className="text-center absolute top-0 right-1/2 translate-x-1/2">
                         {inviteId && (
                             <div className="mt-2">
@@ -364,7 +370,7 @@ export default function Home() {
                             </div>
                         )}
                     </div>
-                )}
+                )} */}
 
                 {/* 主要内容区域 */}
                 <div className="flex flex-col items-center">
@@ -413,6 +419,7 @@ export default function Home() {
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     placeholder="Name"
+                                    maxLength={26}
                                     className="w-full px-4 py-3 bg-[#C1FF724D] rounded-full text-white text-sm transition-all focus:outline-none focus:border-none placeholder-white"
                                 />
                                 {/* X (Twitter) 输入框 */}
@@ -421,6 +428,7 @@ export default function Home() {
                                     value={xName}
                                     onChange={(e) => setXName(e.target.value)}
                                     placeholder="X (Twitter)"
+                                    maxLength={50}
                                     className="w-full px-4 py-3 bg-[#C1FF724D] rounded-full text-white text-sm transition-all focus:outline-none focus:border-none placeholder-white"
                                 />
 
@@ -430,6 +438,7 @@ export default function Home() {
                                     value={wechatName}
                                     onChange={(e) => setWechatName(e.target.value)}
                                     placeholder="WeChat"
+                                    maxLength={50}
                                     className="w-full px-4 py-3 bg-[#C1FF724D] rounded-full text-white text-sm transition-all focus:outline-none focus:border-none placeholder-white"
                                 />
                                 <input
@@ -438,8 +447,8 @@ export default function Home() {
                                     onChange={(e) => setWalletAddress(e.target.value)}
                                     placeholder="Wallet Address"
                                     className={`w-full px-4 py-3 bg-[#C1FF724D] rounded-full text-white text-sm transition-all focus:outline-none focus:border-none placeholder-white ${walletAddress && !isValidWalletAddress(walletAddress)
-                                            ? 'border-2 border-red-500'
-                                            : ''
+                                        ? 'border-2 border-red-500'
+                                        : ''
                                         }`}
                                 />
                                 {walletAddress && !isValidWalletAddress(walletAddress) && (
@@ -489,6 +498,7 @@ export default function Home() {
                                         walletAddress={walletAddress}
                                         userId={user?.id}
                                         onGenerated={handlePosterGenerated}
+                                        onClose={handlePosterClose}
                                     />
                                 </div>
                             )}

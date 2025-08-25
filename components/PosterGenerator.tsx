@@ -11,19 +11,20 @@ interface PosterGeneratorProps {
   walletAddress: string;
   userId?: string; // 添加用户ID用于生成邀请链接
   onGenerated: (dataUrl: string) => void;
+  onClose: () => void;
 }
 
-export default function PosterGenerator({ name, xName, wechatName, walletAddress, userId, onGenerated }: PosterGeneratorProps) {
+export default function PosterGenerator({ name, xName, wechatName, walletAddress, userId, onGenerated, onClose }: PosterGeneratorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string>('');
   const [generatedDataUrl, setGeneratedDataUrl] = useState<string>('');
 
   useEffect(() => {
-    if (name && (xName || wechatName) && walletAddress) {
+    if (name && (xName || wechatName) && walletAddress && !generatedDataUrl) {
       generatePoster();
     }
-  }, [name, xName, wechatName, walletAddress]);
+  }, [name, xName, wechatName, walletAddress, generatedDataUrl]);
 
   const generatePoster = async () => {
     if (!canvasRef.current) return;
@@ -178,11 +179,11 @@ export default function PosterGenerator({ name, xName, wechatName, walletAddress
             
             if (navigator.canShare({ files: [file] })) {
               await navigator.share({
-                title: 'MOVA GALA',
+                title: 'MOVA Poster Generated',
                 text: 'Check out my exclusive invitation poster',
                 files: [file]
               });
-              toast.success('Poster shared!');
+              toast.success('Poster downloaded!');
               return;
             }
           } catch (shareError) {
@@ -298,7 +299,6 @@ export default function PosterGenerator({ name, xName, wechatName, walletAddress
   const handlePosterGenerated = (dataUrl: string) => {
     onGenerated(dataUrl);
     setGeneratedDataUrl(dataUrl);
-    // 移除自动下载，改为显示弹窗
   };
 
   return (
@@ -319,7 +319,12 @@ export default function PosterGenerator({ name, xName, wechatName, walletAddress
       {generatedDataUrl && (
         <div 
           className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
-          onClick={() => setGeneratedDataUrl('')}
+          onClick={() => {
+            setGeneratedDataUrl('');
+            setError('');
+            setIsGenerating(false);
+            onClose();
+          }}
         >
           <div 
             className="bg-[#1a1a2e] rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto"
@@ -345,7 +350,12 @@ export default function PosterGenerator({ name, xName, wechatName, walletAddress
                 </button>
                 
                 <button
-                  onClick={() => setGeneratedDataUrl('')}
+                  onClick={() => {
+                    setGeneratedDataUrl('');
+                    setError('');
+                    setIsGenerating(false);
+                    onClose();
+                  }}
                   className="w-full bg-transparent border border-[#C1FF72] text-[#C1FF72] px-6 py-3 rounded-full font-semibold hover:bg-[#C1FF72]/10 transition-colors"
                 >
                   Close
