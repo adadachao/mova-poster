@@ -351,16 +351,20 @@ export default function Home() {
                 </div>
 
                 {/* 用户状态提示 */}
-                {/* {user && (
+                {user && (
                     <div className="text-center absolute top-0 right-1/2 translate-x-1/2">
                         {inviteId && (
                             <div className="mt-2">
                                 <span className="text-gray-400 text-xs">Invite ID: </span>
                                 <span className="text-[#C1FF72] text-xs font-mono">{inviteId}</span>
+
+                                <div className="text-gray-400 text-xs mt-2">
+                                    User ID: {user.id}
+                                </div>
                             </div>
                         )}
                     </div>
-                )} */}
+                )}
 
                 {/* 主要内容区域 */}
                 <div className="flex flex-col items-center">
