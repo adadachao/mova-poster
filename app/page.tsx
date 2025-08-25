@@ -22,6 +22,7 @@ export default function Home() {
     const [userMovaTokens, setUserMovaTokens] = useState(0);
     const [user, setUser] = useState<any>(null);
     const [authLoading, setAuthLoading] = useState(true);
+    const [authError, setAuthError] = useState<string>('');
     const [posterUrl, setPosterUrl] = useState<string>('');
     const [showPoster, setShowPoster] = useState(false);
     const [inviteId, setInviteId] = useState<string>('');
@@ -80,17 +81,17 @@ export default function Home() {
                     // 如果没有会话，进行匿名登录
                     const { data, error } = await supabase.auth.signInAnonymously();
 
-                    if (error) {
-                        console.error('Anonymous sign-in error:', error);
-                        // setError('Authentication failed. Please refresh the page.'); // Removed error state
-                    } else {
-                        setUser(data.user);
-                        console.log('Anonymous sign-in successful:', data.user.id);
-                    }
+                                    if (error) {
+                    console.error('Anonymous sign-in error:', error);
+                    setAuthError('Authentication failed. Please refresh the page.');
+                } else {
+                    setUser(data.user);
+                    console.log('Anonymous sign-in successful:', data.user.id);
+                }
                 }
             } catch (error) {
                 console.error('Authentication error:', error);
-                // setError('Authentication failed. Please refresh the page.'); // Removed error state
+                setAuthError('Authentication failed. Please refresh the page.');
             } finally {
                 setAuthLoading(false);
             }
@@ -300,21 +301,25 @@ export default function Home() {
     }
 
     // 如果认证失败，显示错误信息
-    // if (error && !user) { // Removed error state
-    //     return (
-    //         <div className="min-h-screen text-white flex items-center justify-center safe-area">
-    //             <div className="text-center safe-area-padding">
-    //                 <p className="text-red-400 text-lg mb-4">{error}</p>
-    //                 <button
-    //                     onClick={() => window.location.reload()}
-    //                     className="bg-[#C1FF72] text-black px-6 py-2 rounded-lg font-bold hover:bg-[#C1FF72]/80"
-    //                 >
-    //                     Retry
-    //                 </button>
-    //             </div>
-    //         </div>
-    //     );
-    // }
+    if (authError && !user) {
+        return (
+            <div className="min-h-screen text-white flex items-center justify-center safe-area">
+                <div className="text-center safe-area-padding">
+                    <p className="text-red-400 text-lg mb-4">{authError}</p>
+                    <button
+                        onClick={() => {
+                            setAuthError('');
+                            setAuthLoading(true);
+                            window.location.reload();
+                        }}
+                        className="bg-[#C1FF72] text-black px-6 py-2 rounded-lg font-bold hover:bg-[#C1FF72]/80"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     // 如果缺失邀请ID，显示错误提示
     if (missingInviteId) {
