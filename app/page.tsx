@@ -29,6 +29,53 @@ export default function Home() {
     const [showViewMyPosterButton, setShowViewMyPosterButton] = useState(false);
     const [showViewMyPoster, setShowViewMyPoster] = useState(false);
     const [myPosterData, setMyPosterData] = useState<any>(null);
+
+    const guests = [{
+        id: 1,
+        name: 'Wael Muhaisen',
+        position: 'CEO of Mova',
+        avatar: '/static/images/guest1.png',
+    }, {
+        id: 2,
+        name: 'Asif Kamal',
+        position: 'CTO of Mova',
+        avatar: '/static/images/guest2.png',
+    }, {
+        id: 3,
+        name: '-',
+        position: 'CMO of Mova',
+        avatar: '/static/images/guest3.png',
+    }, {
+        id: 4,
+        name: '-',
+        position: 'Representative of Aqua1',
+        avatar: '/static/images/guest4.png',
+    }, {
+        id: 5,
+        name: '-',
+        position: 'Representative of USD1',
+        avatar: '/static/images/guest5.png',
+    }, {
+        id: 6,
+        name: '-',
+        position: 'Representative of Standard Chartered Bank',
+        avatar: '/static/images/guest6.png',
+    }, {
+        id: 7,
+        name: 'Shady',
+        position: 'Founding Partner of Join the Planet Foundation',
+        avatar: '/static/images/guest7.png',
+    }, {
+        id: 8,
+        name: 'MR. Dundee',
+        position: 'CEO of MINAX Global Brand Exchange',
+        avatar: '/static/images/guest8.png',
+    }, {
+        id: 9,
+        name: '-',
+        position: 'Lionel Messi’s Agent',
+        avatar: '/static/images/guest9.png',
+    }]
     // 读取URL参数
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -82,13 +129,13 @@ export default function Home() {
                     // 如果没有会话，进行匿名登录
                     const { data, error } = await supabase.auth.signInAnonymously();
 
-                                    if (error) {
-                    console.error('Anonymous sign-in error:', error);
-                    setAuthError('Authentication failed. Please refresh the page.');
-                } else {
-                    setUser(data.user);
-                    console.log('Anonymous sign-in successful:', data.user.id);
-                }
+                    if (error) {
+                        console.error('Anonymous sign-in error:', error);
+                        setAuthError('Authentication failed. Please refresh the page.');
+                    } else {
+                        setUser(data.user);
+                        console.log('Anonymous sign-in successful:', data.user.id);
+                    }
                 }
             } catch (error) {
                 console.error('Authentication error:', error);
@@ -122,8 +169,8 @@ export default function Home() {
             const invitedCount = data?.length || 0;
             setUserInvitedCount(invitedCount);
 
-            // 计算 MOVA token：每邀请一个人 +100，最多1000
-            const movaTokens = Math.min(invitedCount * 100, 1000);
+            // 计算 MOVA token：每邀请一个人 +10，最多1000
+            const movaTokens = Math.min(invitedCount * 10, 1000);
             setUserMovaTokens(movaTokens);
 
             const { data: invitationData, error: invitationError } = await supabase
@@ -353,7 +400,7 @@ export default function Home() {
             {/* 背景图片 */}
             <div
                 className="absolute w-full h-[50.75rem] top-0 left-0 inset-0 bg-cover bg-center bg-no-repeat z-10"
-                style={{ backgroundImage: 'url(/static/home_bg.svg)' }}
+                style={{ backgroundImage: 'url(/static/home_bg.png)' }}
             ></div>
 
             {/* 背景渐变遮罩 - 上下过渡效果 */}
@@ -584,12 +631,12 @@ export default function Home() {
                                     <span className="border border-[#C1FF72] text-white px-3 py-1 font-semibold min-w-12 text-center text-md">
                                         {userMovaTokens}
                                     </span>
-                                    <span className="text-white text-xs">MOVA tokens earned (100 per invite, max 1000)</span>
+                                    <span className="text-white text-xs">USDT-worth $MOVA at the conference venue by presenting this page</span>
                                 </div>
                             </div>
 
                             <button className="bg-[#C1FF724D] mx-auto text-white px-4 py-2 font-semibold text-xs">
-                                EARN UP TO 1000 MOVA
+                                EARN $MOVA WORTH UP TO 1000 USDT
                             </button>
                         </div>
                     </div>
@@ -601,7 +648,7 @@ export default function Home() {
             <div className='relative'>
                 <div
                     className="absolute w-full h-[51.06rem] top-56 left-0 inset-0 bg-cover bg-center bg-no-repeat z-10"
-                    style={{ backgroundImage: 'url(/static/guest_bg.svg)' }}
+                    style={{ backgroundImage: 'url(/static/guest_bg.png)' }}
                 ></div>
 
                 <img src="/static/logos.png" alt="MOVA" className='w-full lg:max-w-6xl mx-auto relative z-29' width={100} height={277} />
@@ -609,34 +656,34 @@ export default function Home() {
                 {/* 嘉宾背景渐变遮罩 - 上下过渡效果 */}
                 <div className="absolute w-full h-[51.06rem] top-56 left-0 inset-0 z-15 bg-gradient-to-b from-black/90 via-transparent to-black/80"></div>
 
-                <div className="relative z-29 max-w-6xl mx-auto px-6 pb-12">
+                <div className="relative z-29 max-w-6xl mx-auto px-4 pb-12">
                     {/* PROPOSED GUEST 横幅 */}
-                    <div className="text-center my-8">
+                    <div className="text-center my-8 lg:my-12">
                         <div className="inline-block bg-[#C1FF72] text-black px-16 py-1 rounded-full font-bold text-md">
                             PROPOSED GUEST
                         </div>
                     </div>
 
                     {/* 五个小嘉宾圆形 */}
-                    <div className="grid grid-cols-5 gap-1 mb-10">
-                        {[1, 2, 3, 4, 5].map((index) => (
-                            <div key={index} className="text-center">
+                    <div className="flex flex-wrap justify-center gap-x-2 gap-y-4 mb-10">
+                        {guests.map((guest) => (
+                            <div key={guest.id} className="text-center w-[4.06rem] lg:w-50">
                                 {/* 嘉宾头像占位符 */}
-                                <div className="w-16 h-16 bg-gray-400 rounded-full mx-auto mb-3 flex items-center justify-center">
-
+                                <div className="w-[3.63rem] h-[3.63rem] lg:w-20 lg:h-20 rounded-full mx-auto mb-3 flex items-center justify-center">
+                                    <img src={guest.avatar} alt={guest.name} className="w-full h-full object-cover rounded-full" />
                                 </div>
                                 {/* 嘉宾姓名 */}
-                                <div className="text-white font-bold text-xs">JIMMY LOO</div>
+                                <div className="text-white font-bold text-[0.56rem] lg:text-xs">{guest.name}</div>
                                 {/* 嘉宾职位 */}
-                                <div className="text-[#C1FF72] text-xs">MOVA CEO</div>
+                                <div className="text-[#C1FF72] text-[0.44rem] lg:text-xs mx-auto">{guest.position}</div>
                             </div>
                         ))}
                     </div>
 
                     {/* 中央大圆形占位符 */}
-                    <div className="text-center mb-6">
-                        <div className="w-56 h-56 bg-gray-400 rounded-full mx-auto flex items-center justify-center">
-                            {/* <span className="text-gray-600 text-4xl font-bold">?</span> */}
+                    <div className="text-center mb-2">
+                        <div className="w-full h-auto mx-auto flex items-center justify-center">
+                            <img src="/static/images/Messi.png" alt="MOVA" className="w-full h-full" />
                         </div>
                     </div>
 

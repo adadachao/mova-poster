@@ -96,7 +96,7 @@ export default function PosterGenerator({ name, xName, wechatName, walletAddress
   const drawDynamicContent = async (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     // 绘制姓名在 INVITE YOU 下方的框内
     ctx.fillStyle = '#C1FF72';
-    ctx.font = 'bold 160px Hero, Arial, sans-serif';
+    ctx.font = 'bold 140px Hero, Arial, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
@@ -107,7 +107,7 @@ export default function PosterGenerator({ name, xName, wechatName, walletAddress
     ctx.shadowOffsetY = 2;
     
     // 绘制姓名在框内居中位置
-    ctx.fillText(name, width / 2, height * 0.39);
+    ctx.fillText(name, width / 2, height * 0.19 + 40);
     
     // 重置阴影
     ctx.shadowColor = 'transparent';
@@ -118,14 +118,14 @@ export default function PosterGenerator({ name, xName, wechatName, walletAddress
     // 生成邀请链接二维码（移动到 Telegram 位置）
     if (userId) {
       const inviteUrl = `${window.location.origin}?invite_id=${userId}`;
-      await drawQRCode(ctx, width * 0.25 + 10, height * 0.77 + 25, inviteUrl, 'Register');
+      await drawQRCode(ctx, width * 0.25, height * 0.32 + 80, inviteUrl, 'Register');
     } else {
-      drawQRPlaceholder(ctx, width * 0.25 + 10, height * 0.77 + 25, 'Register');
+      drawQRPlaceholder(ctx, width * 0.25, height * 0.32 + 80, 'Register');
     }
   };
 
   const drawQRPlaceholder = (ctx: CanvasRenderingContext2D, x: number, y: number, label: string) => {
-    const size = 395;
+    const size = 235;
     
     // 绘制二维码背景
     ctx.fillStyle = '#ffffff';
@@ -142,7 +142,7 @@ export default function PosterGenerator({ name, xName, wechatName, walletAddress
       const qr = await QRCode.toDataURL(text, { 
         errorCorrectionLevel: 'H', 
         margin: 2,
-        width: 395,
+        width: 235,
         color: {
           dark: '#000000',
           light: '#FFFFFF'
@@ -152,7 +152,7 @@ export default function PosterGenerator({ name, xName, wechatName, walletAddress
       return new Promise<void>((resolve) => {
         const qrImg = new Image();
         qrImg.onload = () => {
-          const size = 395;
+          const size = 235;
           ctx.drawImage(qrImg, x - size/2, y - size/2, size, size);
           resolve();
         };
