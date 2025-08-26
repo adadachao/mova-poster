@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import PosterGenerator from '../components/PosterGenerator';
 import toast from 'react-hot-toast';
+import { IntlProvider, useIntl } from '../components/IntlProvider';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 
 // Supabase 配置
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://zilwwyrgetjplvwcowjl.supabase.co';
@@ -11,10 +13,10 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOi
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export default function Home() {
+function HomeContent() {
+    const { t } = useIntl();
     const [name, setName] = useState('');
     const [xName, setXName] = useState('');
-    const [wechatName, setWechatName] = useState('');
     const [walletAddress, setWalletAddress] = useState(''); // 钱包地址字段
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
@@ -33,48 +35,43 @@ export default function Home() {
     const guests = [{
         id: 1,
         name: 'Wael Muhaisen',
-        position: 'CEO of Mova',
+        position: t('guests.ceo'),
         avatar: '/static/images/guest1.png',
     }, {
         id: 2,
-        name: 'Asif Kamal',
-        position: 'CTO of Mova',
+        name: 'Favio Sposito',
+        position: t('guests.foundationFounder'),
         avatar: '/static/images/guest2.png',
     }, {
         id: 3,
-        name: '-',
-        position: 'CMO of Mova',
+        name: 'Edward Wu',
+        position: t('guests.ctoPalmGlobal'),
         avatar: '/static/images/guest3.png',
     }, {
         id: 4,
-        name: '-',
-        position: 'Representative of Aqua1',
+        name: 'Bobby Zhou',
+        position: t('guests.coFounderAquaLabs'),
         avatar: '/static/images/guest4.png',
     }, {
         id: 5,
-        name: '-',
-        position: 'Representative of USD1',
+        name: 'Deng Di',
+        position: t('guests.founderCeoMinax'),
         avatar: '/static/images/guest5.png',
     }, {
         id: 6,
-        name: '-',
-        position: 'Representative of Standard Chartered Bank',
+        name: '',
+        position: t('guests.representativeWorldLiberty'),
         avatar: '/static/images/guest6.png',
     }, {
         id: 7,
-        name: 'Shady',
-        position: 'Founding Partner of Join the Planet Foundation',
+        name: '',
+        position: t('guests.representativeStandardChartered'),
         avatar: '/static/images/guest7.png',
     }, {
         id: 8,
-        name: 'MR. Dundee',
-        position: 'CEO of MINAX Global Brand Exchange',
+        name: '',
+        position: t('guests.representativePublicInvestment'),
         avatar: '/static/images/guest8.png',
-    }, {
-        id: 9,
-        name: '-',
-        position: 'Lionel Messi’s Agent',
-        avatar: '/static/images/guest9.png',
     }]
     // 读取URL参数
     useEffect(() => {
@@ -91,18 +88,15 @@ export default function Home() {
         // 读取其他URL参数并自动填充表单
         const nameParam = urlParams.get('name');
         const xNameParam = urlParams.get('x_name');
-        const wechatNameParam = urlParams.get('wechat_name');
         const walletAddressParam = urlParams.get('wallet_address');
 
         if (nameParam) {
             setName(nameParam);
         }
 
-        // 如果有x_name或wechat_name，优先使用x_name，否则使用wechat_name
+        // 如果有x_name，优先使用x_name
         if (xNameParam) {
             setXName(xNameParam);
-        } else if (wechatNameParam) {
-            setWechatName(wechatNameParam);
         }
 
         if (walletAddressParam) {
@@ -185,7 +179,6 @@ export default function Home() {
 
                 setName(invitationData[0].real_name);
                 setXName(invitationData[0].x_name);
-                setWechatName(invitationData[0].wechat_name);
                 setWalletAddress(invitationData[0].wallet_address);
             }
         } catch (error) {
@@ -218,37 +211,33 @@ export default function Home() {
         e.preventDefault();
 
         if (!user) {
-            toast.error('Please wait for authentication to complete.');
+            toast.error(t('errors.networkError'));
             return;
         }
 
         if (!inviteId) {
-            toast.error('Missing invitation ID.');
+            toast.error(t('errors.invalidInviteId'));
             return;
         }
 
         if (!name) {
-            toast.error('Please enter your name.');
+            toast.error(t('form.required'));
             return;
         }
 
         if (!xName) {
-            toast.error('Please enter your X (Twitter) name.');
+            toast.error(t('form.required'));
             return;
         }
 
-        if (!wechatName) {
-            toast.error('Please enter your WeChat name.');
-            return;
-        }
 
         if (!walletAddress) {
-            toast.error('Please enter your wallet address.');
+            toast.error(t('form.required'));
             return;
         }
 
         if (!isValidWalletAddress(walletAddress)) {
-            toast.error('Please enter a valid wallet address (0x followed by 40 hexadecimal characters).');
+            toast.error(t('form.invalidFormat'));
             return;
         }
 
@@ -270,8 +259,8 @@ export default function Home() {
             const { data: invitationData, error: invitationError } = await supabase
                 .from('invitation')
                 .select('*')
-                .eq('user_id', user.id)
-                .eq('inviter_id', inviteId);
+                .eq('user_id', user.id);
+                // .eq('inviter_id', inviteId)
 
             if (invitationData && invitationData.length > 0) {
                 response = await fetch(`${supabaseUrl}/functions/v1/change_info`, {
@@ -284,7 +273,6 @@ export default function Home() {
                         name: name,
                         wallet_address: walletAddress,
                         x_name: xName,
-                        wechat_name: wechatName
                     })
                 });
             } else {
@@ -300,7 +288,6 @@ export default function Home() {
                         name: name,
                         wallet_address: walletAddress,
                         x_name: xName,
-                        wechat_name: wechatName
                     })
                 });
             }
@@ -312,7 +299,7 @@ export default function Home() {
                 setSuccess(true);
                 setLoading(false);
 
-                toast.success('Poster generated successfully!');
+                toast.success(t('poster.success'));
 
                 // 更新用户邀请数量
                 fetchUserInvitedCount();
@@ -329,7 +316,7 @@ export default function Home() {
         } catch (error: any) {
             console.error('Error:', error);
             setLoading(false);
-            toast.error(error.message || 'Submission failed, please try again');
+            toast.error(error.message || t('errors.serverError'));
         }
     };
 
@@ -348,13 +335,127 @@ export default function Home() {
         setSuccess(false);
     };
 
+    // Cross-browser copy helper
+    const copyToClipboard = async (text: string) => {
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(text);
+                return true;
+            }
+        } catch { }
+        try {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            textarea.style.top = '0';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            const ok = document.execCommand('copy');
+            document.body.removeChild(textarea);
+            if (ok) return true;
+        } catch { }
+        try {
+            window.prompt('Copy this link:', text);
+        } catch { }
+        return false;
+    };
+
+    const handleCopyInviteLink = async () => {
+        try {
+            // 如果没生成过海报 先调用生成海报函数
+            const { data: invitationData, error: invitationError } = await supabase
+                .from('invitation')
+                .select('*')
+                .eq('user_id', user.id)
+
+            if (!invitationData || invitationData.length === 0) {
+                const { data: { session } } = await supabase.auth.getSession();
+
+                if (!session) {
+                    throw new Error('User not logged in');
+                }
+
+                if (!inviteId) {
+                    toast.error(t('errors.invalidInviteId'));
+                    return;
+                }
+        
+                if (!name) {
+                    toast.error(t('form.required'));
+                    return;
+                }
+        
+                if (!xName) {
+                    toast.error(t('form.required'));
+                    return;
+                }
+        
+        
+                if (!walletAddress) {
+                    toast.error(t('form.required'));
+                    return;
+                }
+        
+                if (!isValidWalletAddress(walletAddress)) {
+                    toast.error(t('form.invalidFormat'));
+                    return;
+                }
+                const response = await fetch(`${supabaseUrl}/functions/v1/activity_invite`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`
+                    },
+                    body: JSON.stringify({
+                        invite_id: inviteId,
+                        name: name,
+                        wallet_address: walletAddress,
+                        x_name: xName,
+                    })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('result', result);
+
+                    const finalInviteId = result.invite_id;
+                    if (!finalInviteId) throw new Error('no-invite-id');
+                    const inviteLink = `${window.location.origin}/?invite_id=${finalInviteId}`;
+                    const ok = await copyToClipboard(inviteLink);
+                    if (ok) {
+                        toast.success(t('stats.copySuccess'));
+                    } else {
+                        toast.error(t('stats.copyFailed'));
+                    }
+                } else {
+                    throw new Error('Error processing invitation');
+                }
+            } else {
+                const finalInviteId = user?.id;
+                if (!finalInviteId) throw new Error('no-invite-id');
+                const inviteLink = `${window.location.origin}/?invite_id=${finalInviteId}`;
+                const ok = await copyToClipboard(inviteLink);
+                if (ok) {
+                    toast.success(t('stats.copySuccess'));
+                } else {
+                    toast.error(t('stats.copyFailed'));
+                }
+            }
+
+        } catch (e) {
+            toast.error(t('stats.copyFailed'));
+        }
+    }
+
     // 如果正在认证中，显示加载状态
     if (authLoading) {
         return (
             <div className="min-h-screen text-white flex items-center justify-center safe-area">
                 <div className="text-center safe-area-padding">
                     <div className="border-2 border-[#C1FF72]/30 border-t-[#C1FF72] rounded-full w-12 h-12 animate-spin mx-auto mb-4"></div>
-                    <p className="text-lg">Initializing...</p>
+                    <p className="text-lg">{t('common.loading')}</p>
                 </div>
             </div>
         );
@@ -374,7 +475,7 @@ export default function Home() {
                         }}
                         className="bg-[#C1FF72] text-black px-6 py-2 rounded-lg font-bold hover:bg-[#C1FF72]/80"
                     >
-                        Retry
+                        {t('common.confirm')}
                     </button>
                 </div>
             </div>
@@ -402,6 +503,9 @@ export default function Home() {
 
     return (
         <div className="min-h-screen text-white overflow-x-hidden relative safe-area">
+            {/* 语言切换器 */}
+            <LanguageSwitcher />
+
             {/* 背景图片 */}
             <div
                 className="absolute w-full h-[50.75rem] top-0 left-0 inset-0 bg-cover bg-center bg-no-repeat z-10"
@@ -451,27 +555,27 @@ export default function Home() {
                             <h2 className="text-5xl font-bold leading-tight text-white">GALA</h2>
                             <div className='flex flex-col items-center justify-center gap-1'>
                                 <div className="inline-block bg-[#C1FF72] text-[#1E1E1E] px-4 py-1 rounded-full font-bold text-sm">
-                                    Mova Mainnet Activation
+                                    {t('event.mainnetActivation')}
                                 </div>
-                                <p className="text-white text-xs">SAVOR INNOVATION • SIP SPIRIT</p>
+                                <p className="text-white text-xs">{t('event.savorInnovation')}</p>
                             </div>
 
                         </div>
                     </div>
 
                     {/* 中间内容区域 - 使用网格布局 */}
-                    <div className="grid grid-cols-1 gap-8 w-full max-w-5xl mb-12">
+                    <div className="grid grid-cols-1 gap-4 w-full max-w-5xl mb-12">
 
                         {/* 右侧事件详情 */}
                         <div className="lg:col-span-1 text-right">
                             <div className="mb-6">
-                                <div className="text-white text-xs mb-1">Event Date</div>
-                                <div className="text-[#C1FF72] text-sm font-semibold">29th AUG 2025 • 8:00PM</div>
+                                <div className="text-white text-xs mb-1">{t('event.eventDate')}</div>
+                                <div className="text-[#C1FF72] text-sm font-semibold">{t('event.eventDateValue')}</div>
                             </div>
                             <div>
-                                <div className="text-white text-xs mb-1">Location</div>
-                                <div className="text-[#C1FF72] text-sm font-semibold">Pier 1929, HONG KONG</div>
-                                <div className="text-[#C1FF72] text-xs mt-1">2F, Wan Chai Ferry Pier, Wan Chai Hong Kong</div>
+                                <div className="text-white text-xs mb-1">{t('event.location')}</div>
+                                <div className="text-[#C1FF72] text-sm font-semibold">{t('event.locationValue')}</div>
+                                <div className="text-[#C1FF72] text-xs mt-1">{t('event.locationAddress')}</div>
                             </div>
                         </div>
 
@@ -483,7 +587,7 @@ export default function Home() {
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    placeholder="Name"
+                                    placeholder={t('form.namePlaceholder')}
                                     maxLength={26}
                                     className="w-full px-4 py-3 bg-[#C1FF724D] rounded-full text-white text-sm transition-all focus:outline-none focus:border-none placeholder-white"
                                 />
@@ -492,25 +596,16 @@ export default function Home() {
                                     type="text"
                                     value={xName}
                                     onChange={(e) => setXName(e.target.value)}
-                                    placeholder="X (Twitter)"
+                                    placeholder={t('form.xNamePlaceholder')}
                                     maxLength={50}
                                     className="w-full px-4 py-3 bg-[#C1FF724D] rounded-full text-white text-sm transition-all focus:outline-none focus:border-none placeholder-white"
                                 />
 
-
-                                <input
-                                    type="text"
-                                    value={wechatName}
-                                    onChange={(e) => setWechatName(e.target.value)}
-                                    placeholder="WeChat"
-                                    maxLength={50}
-                                    className="w-full px-4 py-3 bg-[#C1FF724D] rounded-full text-white text-sm transition-all focus:outline-none focus:border-none placeholder-white"
-                                />
                                 <input
                                     type="text"
                                     value={walletAddress}
                                     onChange={(e) => setWalletAddress(e.target.value)}
-                                    placeholder="Wallet Address"
+                                    placeholder={t('form.walletAddressPlaceholder')}
                                     className={`w-full px-4 py-3 bg-[#C1FF724D] rounded-full text-white text-sm transition-all focus:outline-none focus:border-none placeholder-white ${walletAddress && !isValidWalletAddress(walletAddress)
                                         ? 'border-2 border-red-500'
                                         : ''
@@ -518,22 +613,22 @@ export default function Home() {
                                 />
                                 {walletAddress && !isValidWalletAddress(walletAddress) && (
                                     <p className="text-red-400 text-xs mt-1 ml-2">
-                                        Invalid wallet address format
+                                        {t('form.invalidFormat')}
                                     </p>
                                 )}
 
                                 <button
                                     type="submit"
                                     disabled={loading}
-                                    className="px-3 py-4 mt-4 bg-[#C1FF72] min-w-80 text-black border-none rounded-full text-md font-bold cursor-pointer transition-all hover:transform hover:-translate-y-1 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:transform-none"
+                                    className="px-3 py-4 mt-4 mb-0 bg-[#C1FF72] min-w-80 text-black border-none rounded-full text-sm font-bold cursor-pointer transition-all hover:transform hover:-translate-y-1 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:transform-none"
                                 >
-                                    {loading ? 'GENERATING...' : 'GENERATE YOUR EXCLUSIVE POSTER'}
+                                    {loading ? t('poster.loading') : t('poster.generate')}
                                 </button>
 
                                 {
                                     showViewMyPosterButton && (
-                                        <button type="button" onClick={handleViewMyPoster} className="px-3 py-4 mt-4 text-[#C1FF72] min-w-80 border border-[#C1FF72] rounded-full text-md font-bold cursor-pointer transition-all hover:transform hover:-translate-y-1 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:transform-none">
-                                            View My Poster
+                                        <button type="button" onClick={handleViewMyPoster} className="px-3 py-4 mt-4 text-[#C1FF72] min-w-80 border border-[#C1FF72] rounded-full text-sm font-bold cursor-pointer transition-all hover:transform hover:-translate-y-1 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:transform-none">
+                                            {t('poster.viewMyPoster')}
                                         </button>
                                     )
                                 }
@@ -543,14 +638,14 @@ export default function Home() {
                             {loading && (
                                 <div className="text-center mt-4">
                                     <div className="border-2 border-[#C1FF72]/30 border-t-[#C1FF72] rounded-full w-6 h-6 animate-spin mx-auto mb-2"></div>
-                                    <p className="text-gray-300 text-sm">Generating your exclusive poster...</p>
+                                    <p className="text-gray-300 text-sm">{t('poster.loading')}</p>
                                 </div>
                             )}
 
                             {/* 成功消息 */}
                             {success && (
                                 <div className="bg-[#C1FF72]/10 border-2 border-[#C1FF72] text-[#C1FF72] p-3 rounded-lg mt-4 text-center text-sm">
-                                    <p>✅ Your exclusive poster has been generated successfully!</p>
+                                    <p>✅ {t('poster.success')}</p>
                                 </div>
                             )}
 
@@ -567,7 +662,6 @@ export default function Home() {
                                     <PosterGenerator
                                         name={name}
                                         xName={xName}
-                                        wechatName={wechatName}
                                         walletAddress={walletAddress}
                                         userId={user?.id}
                                         onGenerated={handlePosterGenerated}
@@ -583,7 +677,6 @@ export default function Home() {
                                         <PosterGenerator
                                             name={myPosterData.real_name}
                                             xName={myPosterData.x_name}
-                                            wechatName={myPosterData.wechat_name}
                                             walletAddress={myPosterData.wallet_address}
                                             userId={myPosterData.user_id}
                                             onGenerated={handlePosterGenerated}
@@ -623,6 +716,22 @@ export default function Home() {
                             )} */}
                         </div>
 
+                        {/* 邀請連結顯示與複製 */}
+                        <div className="flex flex-col items-center justify-center gap-2">
+                            <div className="text-center text-white/70 text-xs">{t('stats.yourInviteLink')}</div>
+                            <div className="flex items-center w-[19.83rem] rounded-full border border-[#C1FF72] overflow-hidden">
+                                <div className="px-3 py-4 text-white text-xs truncate flex-1">
+                                    {typeof window !== 'undefined' && user?.id ? `${window.location.origin}/?invite_id=${user.id}` : ''}
+                                </div>
+                                <button
+                                    onClick={() => handleCopyInviteLink()}
+                                    className="bg-[#C1FF72] text-black px-5 h-full text-sm font-semibold"
+                                >
+                                    {t('stats.copyInviteLink')}
+                                </button>
+                            </div>
+                        </div>
+
                         {/* 统计区域 */}
                         <div className="flex flex-col items-center justify-center gap-4">
                             <div className=" lg:col-span-1 text-left">
@@ -630,18 +739,18 @@ export default function Home() {
                                     <span className="border border-[#C1FF72] text-white px-3 py-1 font-semibold min-w-12 text-center text-md">
                                         {userInvitedCount}
                                     </span>
-                                    <span className="text-white text-xs">People have already been invited through your link</span>
+                                    <span className="text-white text-xs">{t('stats.peopleInvited')}</span>
                                 </div>
                                 <div className="flex items-center gap-3 mb-4 text-md">
                                     <span className="border border-[#C1FF72] text-white px-3 py-1 font-semibold min-w-12 text-center text-md">
                                         {userMovaTokens}
                                     </span>
-                                    <span className="text-white text-xs">USDT-worth $MOVA at the conference venue by presenting this page</span>
+                                    <span className="text-white text-xs">{t('stats.usdtWorth')}</span>
                                 </div>
                             </div>
 
                             <button className="bg-[#C1FF724D] mx-auto text-white px-4 py-2 font-semibold text-xs">
-                                EARN $MOVA WORTH UP TO 1000 USDT
+                                {t('stats.earnMova')}
                             </button>
                         </div>
                     </div>
@@ -661,11 +770,11 @@ export default function Home() {
                 {/* 嘉宾背景渐变遮罩 - 上下过渡效果 */}
                 <div className="absolute w-full h-[51.06rem] top-56 left-0 inset-0 z-15 bg-gradient-to-b from-black/90 via-transparent to-black/80"></div>
 
-                <div className="relative z-29 max-w-6xl mx-auto px-4 pb-12">
+                <div className="relative z-29 max-w-6xl mx-auto px-2 pb-12">
                     {/* PROPOSED GUEST 横幅 */}
                     <div className="text-center my-8 lg:my-12">
                         <div className="inline-block bg-[#C1FF72] text-black px-16 py-1 rounded-full font-bold text-md">
-                            PROPOSED GUEST
+                            {t('event.proposedGuest')}
                         </div>
                     </div>
 
@@ -674,13 +783,13 @@ export default function Home() {
                         {guests.map((guest) => (
                             <div key={guest.id} className="text-center w-[4.06rem] lg:w-50">
                                 {/* 嘉宾头像占位符 */}
-                                <div className="w-[3.63rem] h-[3.63rem] lg:w-20 lg:h-20 rounded-full mx-auto mb-3 flex items-center justify-center">
+                                <div className="w-[3.63rem] h-[3.63rem] lg:w-20 lg:h-20 rounded-full mx-auto mb-2 flex items-center justify-center">
                                     <img src={guest.avatar} alt={guest.name} className="w-full h-full object-cover rounded-full" />
                                 </div>
                                 {/* 嘉宾姓名 */}
-                                <div className="text-white font-bold text-[0.56rem] lg:text-xs">{guest.name}</div>
+                                <div className="text-white font-bold text-[0.56rem] lg:text-xs leading-tight mb-1 whitespace-nowrap">{guest.name}</div>
                                 {/* 嘉宾职位 */}
-                                <div className="text-[#C1FF72] text-[0.44rem] lg:text-xs mx-auto">{guest.position}</div>
+                                <div className="text-[#C1FF72] text-[0.44rem] lg:text-xs mx-auto leading-tight">{guest.position}</div>
                             </div>
                         ))}
                     </div>
@@ -695,33 +804,33 @@ export default function Home() {
                     {/* 底部抽奖信息 */}
                     <div className="text-center">
                         <div className="text-[#C1FF72] font-bold text-base leading-tight">
-                            <p>ON-SITE RAFFLE FOR LIMITED-EDITION</p>
-                            <p>MESSI CUSTOM SNEAKERS</p>
+                            <p>{t('event.raffleTitle')}</p>
+                            <p>{t('event.raffleSubtitle')}</p>
                         </div>
                     </div>
 
                     {/* 主标题 */}
                     <div className="text-center my-8">
                         <h1 className="text-xl font-bold text-white mb-4 flex flex-row items-center justify-center gap-2">
-                            <span className="text-white">ABOUT</span>
+                            <span className="text-white">{t('event.aboutGala')}</span>
                             <img src="/static/mova-logo.svg" alt="MOVA" width={129} height={48} />
-                            <span className="text-white">GALA</span>
+                            <span className="text-white">{t('event.gala')}</span>
                         </h1>
                         <p className="text-xs text-white text-center max-w-3xl mx-auto">
-                            You are cordially invited to the dawn of a new era.
+                            {t('event.invitationText')}
                         </p>
                     </div>
 
                     {/* 介绍文本 */}
                     <div className="text-white text-xs leading-relaxed mb-4 mx-auto">
                         <p className="mb-6 text-center">
-                            Mark your calendars for an evening where the digital future materializes in the most tangible and exhilarating way. The Mova Gala is not merely a launch party; it is the formal debut of the Mova Mainnet, a pivotal moment where vision becomes infrastructure and code becomes community.
+                            {t('event.introParagraph1')}
                         </p>
                         <p className="mb-6 text-center">
-                            This is where the architects, the visionaries, and the pioneers of Web3 will gather to celebrate a monumental achievement: the activation of a blockchain built for speed, security, and seamless evolution.
+                            {t('event.introParagraph2')}
                         </p>
                         <p className="mb-6 text-center">
-                            The Evening's Essence:
+                            {t('event.eveningEssence')}
                         </p>
                     </div>
 
@@ -730,93 +839,104 @@ export default function Home() {
 
                         {/* 分隔按钮 */}
                         <div className="inline-block bg-[#C1FF72] text-black px-6 py-1 rounded-full font-bold text-sm mb-6">
-                            SAVOR INNOVATION • SIP SPIRIT
+                            {t('event.savorInnovation')}
                         </div>
 
                         {/* SAVOR INNOVATION 部分 */}
                         <div className="mb-6">
-                            <h3 className="text-[#C1FF72] text-sm font-bold mb-2">SAVOR INNOVATION</h3>
+                            <h3 className="text-[#C1FF72] text-sm font-bold mb-2">{t('event.savorInnovationTitle')}</h3>
                             <p className="text-white text-xs leading-relaxed">
-                                Engage in thought-provoking conversations with the brilliant minds behind Mova. Witness live demonstrations of its groundbreaking capabilities. Feel the pulse of a network coming to life, and taste the possibilities of decentralized applications that will redefine industries. We will savor the intricate flavors of technological mastery and the promise of a decentralized future.
+                                {t('event.savorInnovationDesc')}
                             </p>
                         </div>
 
                         {/* SIP SPIRIT 部分 */}
                         <div className="mb-6">
-                            <h3 className="text-[#C1FF72] text-sm font-bold mb-2">SIP SPIRIT</h3>
+                            <h3 className="text-[#C1FF72] text-sm font-bold mb-2">{t('event.sipSpiritTitle')}</h3>
                             <p className="text-white text-xs leading-relaxed">
-                                Raise a glass to the spirit of collaboration, ambition, and relentless innovation that brought Mova to life. This is a toast to the community—the developers, validators, and early adopters whose belief fueled this journey. In an atmosphere of refined celebration, we will sip crafted cocktails and connect, forging the relationships that will propel the Mova ecosystem forward.
+                                {t('event.sipSpiritDesc')}
                             </p>
                         </div>
 
                         <div className="inline-block bg-[#C1FF72] text-black px-6 py-1 rounded-full font-bold text-sm mb-6">
-                            EVENT HIGHLIGHTS
+                            {t('event.eventHighlights')}
                         </div>
 
-                        <div className="space-y-4 max-w-4xl mx-auto pb-30">
+                        <div className="space-y-4 max-w-4xl mx-auto pb-10">
                             {/* THE MAINNET MOMENT */}
                             <div className="border border-[#C1FF72] rounded-[20px] overflow-hidden">
                                 <div className="bg-[#C1FF724D] px-4 py-2">
-                                    <h3 className="text-white font-bold text-sm">THE MAINNET MOMENT</h3>
+                                    <h3 className="text-white font-bold text-sm">{t('event.mainnetMoment')}</h3>
                                 </div>
                                 <div className="px-4 py-3">
-                                    <p className="text-white text-xs">A ceremonial countdown and activation of the Mova blockchain—a moment to be remembered.</p>
+                                    <p className="text-white text-xs">{t('event.mainnetMomentDesc')}</p>
                                 </div>
                             </div>
 
                             {/* FIRESIDE CHATS */}
                             <div className="border border-[#C1FF72] rounded-[20px] overflow-hidden">
                                 <div className="bg-[#C1FF724D] px-4 py-2">
-                                    <h3 className="text-white font-bold text-sm">FIRESIDE CHATS</h3>
+                                    <h3 className="text-white font-bold text-sm">{t('event.firesideChats')}</h3>
                                 </div>
                                 <div className="px-4 py-3">
-                                    <p className="text-white text-xs">Intimate discussions with Mova's core founders on the philosophy, technology, and future roadmap.</p>
+                                    <p className="text-white text-xs">{t('event.firesideChatsDesc')}</p>
                                 </div>
                             </div>
 
                             {/* INTERACTIVE TECH DEMOS */}
                             <div className="border border-[#C1FF72] rounded-[20px] overflow-hidden">
                                 <div className="bg-[#C1FF724D] px-4 py-2">
-                                    <h3 className="text-white font-bold text-sm">INTERACTIVE TECH DEMOS</h3>
+                                    <h3 className="text-white font-bold text-sm">{t('event.interactiveTechDemos')}</h3>
                                 </div>
                                 <div className="px-4 py-3">
-                                    <p className="text-white text-xs">Experience the power of Mova firsthand through live, interactive showcases of its first dApps.</p>
+                                    <p className="text-white text-xs">{t('event.interactiveTechDemosDesc')}</p>
                                 </div>
                             </div>
 
                             {/* GOURMET CULINARY EXPERIENCE */}
                             <div className="border border-[#C1FF72] rounded-[20px] overflow-hidden">
                                 <div className="bg-[#C1FF724D] px-4 py-2">
-                                    <h3 className="text-white font-bold text-sm">GOURMET CULINARY EXPERIENCE</h3>
+                                    <h3 className="text-white font-bold text-sm">{t('event.gourmetCulinary')}</h3>
                                 </div>
                                 <div className="px-4 py-3">
-                                    <p className="text-white text-xs">A curated menu designed to tantalize the palate, mirroring the innovation we celebrate.</p>
+                                    <p className="text-white text-xs">{t('event.gourmetCulinaryDesc')}</p>
                                 </div>
                             </div>
 
                             {/* SIGNATURE COCKTAIL BAR */}
                             <div className="border border-[#C1FF72] rounded-[20px] overflow-hidden">
                                 <div className="bg-[#C1FF724D] px-4 py-2">
-                                    <h3 className="text-white font-bold text-sm">SIGNATURE COCKTAIL BAR</h3>
+                                    <h3 className="text-white font-bold text-sm">{t('event.signatureCocktail')}</h3>
                                 </div>
                                 <div className="px-4 py-3">
-                                    <p className="text-white text-xs">Bespoke cocktails inspired by the themes of blockchain, cryptography, and community.</p>
+                                    <p className="text-white text-xs">{t('event.signatureCocktailDesc')}</p>
                                 </div>
                             </div>
 
                             {/* NETWORKING SOIRÉE */}
                             <div className="border border-[#C1FF72] rounded-[20px] overflow-hidden">
                                 <div className="bg-[#C1FF724D] px-4 py-2">
-                                    <h3 className="text-white font-bold text-sm">NETWORKING SOIRÉE</h3>
+                                    <h3 className="text-white font-bold text-sm">{t('event.networkingSoiree')}</h3>
                                 </div>
                                 <div className="px-4 py-3">
-                                    <p className="text-white text-xs">Connect with fellow investors, builders, and creators in an elegant and inspiring setting.</p>
+                                    <p className="text-white text-xs">{t('event.networkingSoireeDesc')}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* Footer */}
+            <footer className="w-full h-10 bg-[#C1FF72]"></footer>
         </div>
+    );
+}
+
+export default function Home() {
+    return (
+        <IntlProvider>
+            <HomeContent />
+        </IntlProvider>
     );
 } 

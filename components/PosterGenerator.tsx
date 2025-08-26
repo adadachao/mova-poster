@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import toast from 'react-hot-toast';
+import { useIntl } from './IntlProvider';
 
 interface PosterGeneratorProps {
   name: string;
-  xName: string;
-  wechatName: string;
+  xName: string;  
   walletAddress: string;
   userId?: string; // 添加用户ID用于生成邀请链接
   onGenerated: (dataUrl: string) => void;
@@ -15,17 +15,18 @@ interface PosterGeneratorProps {
   isViewMyPoster: boolean;
 }
 
-export default function PosterGenerator({ name, xName, wechatName, walletAddress, userId, onGenerated, onClose, isViewMyPoster = false }: PosterGeneratorProps) {
+export default function PosterGenerator({ name, xName, walletAddress, userId, onGenerated, onClose, isViewMyPoster = false }: PosterGeneratorProps) {
+  const { t } = useIntl();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string>('');
   const [generatedDataUrl, setGeneratedDataUrl] = useState<string>('');
 
   useEffect(() => {
-    if (name && (xName || wechatName) && walletAddress && !generatedDataUrl) {
+    if (name && xName && walletAddress && !generatedDataUrl) {
       generatePoster();
     }
-  }, [name, xName, wechatName, walletAddress, generatedDataUrl]);
+  }, [name, xName, walletAddress, generatedDataUrl]);
 
   const generatePoster = async () => {
     if (!canvasRef.current) return;
@@ -184,7 +185,7 @@ export default function PosterGenerator({ name, xName, wechatName, walletAddress
                 text: 'Check out my exclusive invitation poster',
                 files: [file]
               });
-              toast.success('Poster downloaded!');
+              toast.success(t('poster.downloadSuccess'));
               return;
             }
           } catch (shareError) {
@@ -211,76 +212,7 @@ export default function PosterGenerator({ name, xName, wechatName, walletAddress
         setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
         
         // 显示提示信息
-        toast.success('Poster downloaded!\n\nOn iPhone: Check the "Files" app for downloaded files\nOn Android: Check the "Downloads" folder\n\nIf not found, try long pressing the image and select "Save Image"');
-
-        // const newWindow = window.open();
-        // if (newWindow) {
-        //   newWindow.document.write(`
-        //     <!DOCTYPE html>
-        //     <html>
-        //     <head>
-        //       <title>MOVA GALA Poster</title>
-        //       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        //       <style>
-        //         body {
-        //           margin: 0;
-        //           padding: 20px;
-        //           background: #1a1a2e;
-        //           color: #C1FF72;
-        //           font-family: Arial, sans-serif;
-        //           text-align: center;
-        //         }
-        //         .container {
-        //           max-width: 500px;
-        //           margin: 0 auto;
-        //         }
-        //         img {
-        //           max-width: 100%;
-        //           height: auto;
-        //           border-radius: 12px;
-        //           box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        //         }
-        //         .instructions {
-        //           margin-top: 20px;
-        //           padding: 15px;
-        //           background: rgba(193, 255, 114, 0.1);
-        //           border-radius: 8px;
-        //           font-size: 14px;
-        //           line-height: 1.5;
-        //         }
-        //         .close-btn {
-        //           margin-top: 20px;
-        //           padding: 10px 20px;
-        //           background: #C1FF72;
-        //           color: #000;
-        //           border: none;
-        //           border-radius: 20px;
-        //           font-weight: bold;
-        //           cursor: pointer;
-        //         }
-        //       </style>
-        //     </head>
-        //     <body>
-        //       <div class="container">
-        //         <h2>🎉 Your MOVA GALA Poster</h2>
-        //         <img src="${dataUrl}" alt="MOVA GALA Poster">
-        //         <div class="instructions">
-        //           <strong>To save this poster:</strong><br>
-        //           📱 <strong>iPhone/iPad:</strong> Long press the image and select "Save Image"<br>
-        //           🤖 <strong>Android:</strong> Long press the image and select "Save image"<br>
-        //           💻 <strong>Desktop:</strong> Right-click the image and select "Save image as..."
-        //         </div>
-        //         <button class="close-btn" onclick="window.close()">Close Window</button>
-        //       </div>
-        //     </body>
-        //     </html>
-        //   `);
-        //   newWindow.document.close();
-        //   toast.success('Poster opened in new window. Long press the image to save!');
-        // } else {
-        //   // 如果弹窗被阻止，直接显示图片
-        //   toast.error('Please allow popups to download the poster');
-        // }
+        toast.success(t('poster.mobileDownloadTip'));
       } else {
         // 桌面端：使用传统下载方式
         const link = document.createElement('a');
@@ -289,11 +221,11 @@ export default function PosterGenerator({ name, xName, wechatName, walletAddress
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        toast.success('Poster downloaded to your Downloads folder!');
+        toast.success(t('poster.downloadSuccessDesktop'));
       }
     } catch (error) {
       console.error('Download failed:', error);
-      toast.error('下载失败，请重试');
+      toast.error(t('poster.downloadFailed'));
     }
   };
 
@@ -307,7 +239,7 @@ export default function PosterGenerator({ name, xName, wechatName, walletAddress
       {isGenerating && (
         <div className="text-center py-8">
           <div className="border-2 border-[#C1FF72]/30 border-t-[#C1FF72] rounded-full w-8 h-8 animate-spin mx-auto mb-4"></div>
-          <p className="text-[#C1FF72] text-sm">{isViewMyPoster ? 'Viewing your poster...' : 'Generating your exclusive poster...'}</p>
+          <p className="text-[#C1FF72] text-sm">{isViewMyPoster ? t('poster.viewingPoster') : t('poster.generatingPoster')}</p>
         </div>
       )}
       
@@ -332,7 +264,7 @@ export default function PosterGenerator({ name, xName, wechatName, walletAddress
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-center">
-              <h3 className="text-[#C1FF72] text-xl font-bold mb-4">{isViewMyPoster ? 'View Your Poster' : '🎉 Poster Generated Successfully!'}</h3>
+              <h3 className="text-[#C1FF72] text-xl font-bold mb-4">{isViewMyPoster ? t('poster.viewYourPoster') : t('poster.posterGeneratedSuccess')}</h3>
               
               <div className="mb-6">
                 <img 
@@ -347,7 +279,7 @@ export default function PosterGenerator({ name, xName, wechatName, walletAddress
                   onClick={() => downloadPoster(generatedDataUrl)}
                   className="w-full bg-[#C1FF72] text-black px-6 py-3 rounded-full font-semibold hover:bg-[#A8E65A] transition-colors"
                 >
-                  Download Poster
+                  {t('poster.downloadPoster')}
                 </button>
                 
                 <button
@@ -359,12 +291,12 @@ export default function PosterGenerator({ name, xName, wechatName, walletAddress
                   }}
                   className="w-full bg-transparent border border-[#C1FF72] text-[#C1FF72] px-6 py-3 rounded-full font-semibold hover:bg-[#C1FF72]/10 transition-colors"
                 >
-                  Close
+                  {t('poster.close')}
                 </button>
               </div>
               
               <p className="text-white text-xs mt-4 opacity-70">
-                You can also long press the image to save to your photo album
+                {t('poster.longPressTip')}
               </p>
             </div>
           </div>
