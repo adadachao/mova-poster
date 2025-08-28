@@ -488,7 +488,6 @@ function HomeContent() {
             setIsSending(true);
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) throw new Error('no-session');
-            alert('user?.id:' + user?.id + ' code:' + code + ' latitude:' + pos.coords.latitude + ' longitude:' + pos.coords.longitude);
             const resp = await fetch(`${supabaseUrl}/functions/v1/sign`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
@@ -803,9 +802,9 @@ function HomeContent() {
                                 <>
                                     <button
                                         type="button"
-                                        // disabled={userInvitedCount <= 1}
+                                        disabled={userInvitedCount <= 1}
                                         onClick={async () => {
-                                            // if (userInvitedCount <= 1) return;
+                                            if (userInvitedCount <= 1) return;
                                             try {
                                                 // 优先从 URL 参数读取 sign_code
                                                 const urlParams = new URLSearchParams(window.location.search);
@@ -850,7 +849,6 @@ function HomeContent() {
                                 <div className="bg-[#1a1a2e] rounded-2xl p-4 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
                                     <h3 className="text-[#C1FF72] text-lg font-bold mb-3">{t('common.scanQr')}</h3>
                                     <VideoScanner onPermanentDenied={() => setShowCameraHelp(true)} onError={() => toast.error(t('common.cameraDenied'))} onResult={async (code: string) => {
-                                        alert(code);
                                         await submitCheckIn(code);
                                     }} />
                                     {isSending && <div className="text-white text-sm mt-2">{t('common.sending')}</div>}
