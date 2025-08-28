@@ -373,6 +373,17 @@ function HomeContent() {
                 return true;
             }
         } catch {}
+        // Fallback: use copy-to-clipboard library
+        try {
+            const mod = await import('copy-to-clipboard');
+            const copied = mod.default(text, {
+                format: 'text/plain',
+                message: 'copy',
+                debug: false
+            });
+            if (copied) return true;
+        } catch {}
+        // Final fallback: improved textarea method
         try {
             const textarea = document.createElement('textarea');
             textarea.value = text;
@@ -386,14 +397,10 @@ function HomeContent() {
             document.body.appendChild(textarea);
             textarea.focus();
             textarea.select();
-            // iOS 需要 setSelectionRange 才能生效
             textarea.setSelectionRange(0, textarea.value.length);
             const ok = document.execCommand('copy');
             document.body.removeChild(textarea);
             if (ok) return true;
-        } catch {}
-        try {
-            window.prompt('Copy this link:', text);
         } catch {}
         return false;
     };
