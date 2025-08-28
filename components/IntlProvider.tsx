@@ -164,6 +164,7 @@ const enMessages = {
     earnMova: 'EARN $MOVA WORTH UP TO 1000 USDT',
     yourInviteLink: 'Your Invite Link',
     copyInviteLink: 'COPY',
+    longPressToCopy: 'Long press the text below to copy, or select and copy all',
     copySuccess: 'Copied invite link!',
     copyFailed: 'Copy failed, please try again'
   },
@@ -313,7 +314,8 @@ const zhMessages = {
     yourInviteLink: '您的邀請連結',
     copyInviteLink: '複製',
     copySuccess: '已複製邀請連結！',
-    copyFailed: '複製失敗，請重試'
+    copyFailed: '複製失敗，請重試',
+    longPressToCopy: '長按下方文本以複製，或全選複製'
   },
   auth: {
     signIn: '登入',

@@ -371,52 +371,6 @@ function HomeContent() {
 
     // Cross-browser copy helper
     const copyToClipboard = async (text: string) => {
-        const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
-        const isWeChat = /MicroMessenger/i.test(ua);
-        const isIOS = /iP(ad|hone|od)/i.test(ua);
-        const isSafari = /Safari\//.test(ua) && !/Chrome\//.test(ua);
-
-        // Prefer WeChat JS-SDK if available (must be configured via wx.config by host page)
-        try {
-            // @ts-ignore
-            const wx = (typeof window !== 'undefined' ? (window as any).wx : undefined);
-            if (isWeChat && wx && typeof wx.setClipboardData === 'function') {
-                await new Promise<void>((resolve, reject) => {
-                    try {
-                        wx.setClipboardData({
-                            data: text,
-                            success: () => {
-                                try { wx.getClipboardData && wx.getClipboardData({ success: () => resolve() }); } catch { resolve(); }
-                                resolve();
-                            },
-                            fail: () => reject(new Error('wx-fail'))
-                        });
-                    } catch (e) { reject(e as any); }
-                });
-                return true;
-            }
-        } catch {}
-
-        // Safari/iOS often blocks navigator.clipboard; use textarea+execCommand first on these
-        try {
-            if (isIOS || isSafari) {
-                const textarea = document.createElement('textarea');
-                textarea.value = text;
-                textarea.readOnly = true;
-                // Place off-screen but selectable. Avoid opacity:0 (iOS sometimes ignores selection)
-                textarea.style.position = 'absolute';
-                textarea.style.left = '-9999px';
-                textarea.style.top = '0';
-                textarea.style.fontSize = '16px'; // prevent iOS zoom
-                document.body.appendChild(textarea);
-                textarea.select();
-                textarea.setSelectionRange(0, textarea.value.length);
-                const ok = document.execCommand('copy');
-                document.body.removeChild(textarea);
-                if (ok) return true;
-            }
-        } catch {}
-
         // Standard Clipboard API (requires secure context + user gesture)
         try {
             if (typeof navigator !== 'undefined' && 'clipboard' in navigator && window.isSecureContext) {
@@ -434,42 +388,6 @@ function HomeContent() {
                 debug: false
             });
             if (copied) return true;
-        } catch {}
-
-        // Fallback: input + execCommand
-        try {
-            const input = document.createElement('input');
-            input.value = text;
-            input.setAttribute('readonly', '');
-            input.style.position = 'absolute';
-            input.style.left = '-9999px';
-            input.style.top = '0';
-            document.body.appendChild(input);
-            input.select();
-            input.setSelectionRange(0, input.value.length);
-            const ok = document.execCommand('copy');
-            document.body.removeChild(input);
-            if (ok) return true;
-        } catch {}
-
-        // Fallback: contentEditable + Selection API
-        try {
-            const div = document.createElement('div');
-            div.contentEditable = 'true';
-            div.innerText = text;
-            div.style.position = 'absolute';
-            div.style.left = '-9999px';
-            div.style.top = '0';
-            document.body.appendChild(div);
-            const range = document.createRange();
-            range.selectNodeContents(div);
-            const sel = window.getSelection();
-            sel && sel.removeAllRanges();
-            sel && sel.addRange(range);
-            const ok2 = document.execCommand('copy');
-            sel && sel.removeAllRanges();
-            document.body.removeChild(div);
-            if (ok2) return true;
         } catch {}
         return false;
     };
@@ -535,14 +453,8 @@ function HomeContent() {
                     const finalInviteId = user?.id;
                     if (!finalInviteId) throw new Error('no-invite-id');
                     const inviteLink = `${window.location.origin}/?invite_id=${finalInviteId}`;
-                    const ok = await copyToClipboard(inviteLink);
-                    if (ok) {
-                        toast.success(t('stats.copySuccess'));
-                    } else {
-                        setManualCopyText(inviteLink);
-                        setShowManualCopy(true);
-                        toast.error(t('stats.copyFailed'));
-                    }
+                    setManualCopyText(inviteLink);
+                    setShowManualCopy(true);
                 } else {
                     throw new Error('Error processing invitation');
                 }
@@ -550,14 +462,8 @@ function HomeContent() {
                 const finalInviteId = user?.id;
                 if (!finalInviteId) throw new Error('no-invite-id');
                 const inviteLink = `${window.location.origin}/?invite_id=${finalInviteId}`;
-                const ok = await copyToClipboard(inviteLink);
-                if (ok) {
-                    toast.success(t('stats.copySuccess'));
-                } else {
-                    setManualCopyText(inviteLink);
-                    setShowManualCopy(true);
-                    toast.error(t('stats.copyFailed'));
-                }
+                setManualCopyText(inviteLink);
+                setShowManualCopy(true);
             }
 
         } catch (e) {
@@ -988,7 +894,7 @@ function HomeContent() {
                             <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowManualCopy(false)}>
                                 <div className="bg-[#1a1a2e] rounded-2xl p-4 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
                                     <h3 className="text-[#C1FF72] text-lg font-bold mb-2">{t('stats.copyInviteLink')}</h3>
-                                    <p className="text-white/90 text-sm mb-2">{t('common.longPressToCopy') || '长按下方文本以复制，或全选复制。'}</p>
+                                    <p className="text-white/90 text-sm mb-2">{t('stats.longPressToCopy')}</p>
                                     <textarea
                                         defaultValue={manualCopyText}
                                         onFocus={(e) => { e.currentTarget.select(); }}
@@ -1009,7 +915,7 @@ function HomeContent() {
                                                 }
                                             }}
                                         >
-                                            {t('common.copyNow') || '复制'}
+                                            {t('stats.copyInviteLink')}
                                         </button>
                                         <button
                                             className="flex-1 bg-transparent border border-[#C1FF72] text-[#C1FF72] px-4 py-2 rounded-full"
