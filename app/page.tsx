@@ -368,27 +368,33 @@ function HomeContent() {
     // Cross-browser copy helper
     const copyToClipboard = async (text: string) => {
         try {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
+            if (typeof navigator !== 'undefined' && 'clipboard' in navigator && window.isSecureContext) {
                 await navigator.clipboard.writeText(text);
                 return true;
             }
-        } catch { }
+        } catch {}
         try {
             const textarea = document.createElement('textarea');
             textarea.value = text;
+            textarea.setAttribute('readonly', '');
             textarea.style.position = 'fixed';
-            textarea.style.left = '-9999px';
             textarea.style.top = '0';
+            textarea.style.left = '0';
+            textarea.style.opacity = '0';
+            textarea.style.pointerEvents = 'none';
+            textarea.style.zIndex = '-1';
             document.body.appendChild(textarea);
             textarea.focus();
             textarea.select();
+            // iOS 需要 setSelectionRange 才能生效
+            textarea.setSelectionRange(0, textarea.value.length);
             const ok = document.execCommand('copy');
             document.body.removeChild(textarea);
             if (ok) return true;
-        } catch { }
+        } catch {}
         try {
             window.prompt('Copy this link:', text);
-        } catch { }
+        } catch {}
         return false;
     };
 
