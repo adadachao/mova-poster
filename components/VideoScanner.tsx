@@ -56,7 +56,15 @@ export default function VideoScanner({onResult, onError, onPermanentDenied}:{onR
             if (code?.data) {
               stoppedRef.current = true;
               cleanup();
-              onResult(code.data);
+              let raw = code.data.trim();
+              if (raw.startsWith('@')) raw = raw.slice(1);
+              let payload = raw;
+              try {
+                const url = new URL(raw);
+                const sc = url.searchParams.get('sign_code');
+                if (sc) payload = sc;
+              } catch {}
+              onResult(payload);
               return;
             }
           }
