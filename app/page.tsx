@@ -36,7 +36,7 @@ function HomeContent() {
     const [showCameraHelp, setShowCameraHelp] = useState(false);
     const [showGeoHelp, setShowGeoHelp] = useState(false);
     const [isSending, setIsSending] = useState(false);
-    const [signTimeRange, setSignTimeRange] = useState<{starttime: string, endtime: string} | null>(null);
+    const [signTimeRange, setSignTimeRange] = useState<{ starttime: string, endtime: string } | null>(null);
 
     const guests = [{
         id: 1,
@@ -154,12 +154,12 @@ function HomeContent() {
             try {
                 const { data: { session } } = await supabase.auth.getSession();
                 if (!session) return;
-                
+
                 const resp = await fetch(`${supabaseUrl}/functions/v1/sign_time_range`, {
                     method: 'GET',
                     headers: { 'Authorization': `Bearer ${session.access_token}` }
                 });
-                
+
                 if (resp.ok) {
                     const timeRange = await resp.json();
                     setSignTimeRange(timeRange);
@@ -761,40 +761,40 @@ function HomeContent() {
                             </div>
                         </div>
 
-                                                    {(() => {
-                                const now = new Date();
-                                const isInTimeRange = signTimeRange && 
-                                    new Date(signTimeRange.starttime) <= now && 
-                                    now <= new Date(signTimeRange.endtime);
-                                
-                                return isInTimeRange ? (
-                                                            <button
-                            type="button"
-                            onClick={async () => {
-                                try {
-                                    // Pre-check geolocation permission; if denied, show help first
-                                    // @ts-ignore
-                                    if (navigator.permissions && navigator.permissions.query) {
-                                        // @ts-ignore
-                                        const status = await navigator.permissions.query({ name: 'geolocation' });
-                                        if (status.state === 'denied') {
-                                            setShowGeoHelp(true);
-                                            return;
-                                        }
-                                    }
-                                } catch {}
-                                setShowCheckIn(true);
-                            }}
-                                        className="px-3 py-4 mb-0 bg-[#C1FF72] w-[19.83rem] mx-auto text-black border-none rounded-full text-sm font-bold cursor-pointer transition-all hover:transform hover:-translate-y-1 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:transform-none"
-                                    >
-                                        {t('common.checkIn')}
-                                    </button>
-                                ) : (
-                                    <div className="px-3 py-4 mb-0 bg-gray-600 w-[19.83rem] mx-auto text-white border-none rounded-full text-sm font-bold text-center">
-                                        {signTimeRange ? t('common.signTimeNotReached') : t('common.loading')}
-                                    </div>
-                                );
-                            })()}
+                        {(() => {
+                            const now = new Date();
+                            const isInTimeRange = signTimeRange &&
+                                new Date(signTimeRange.starttime) <= now &&
+                                now <= new Date(signTimeRange.endtime);
+
+                            return isInTimeRange ? (
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        try {
+                                            // Pre-check geolocation permission; if denied, show help first
+                                            // @ts-ignore
+                                            if (navigator.permissions && navigator.permissions.query) {
+                                                // @ts-ignore
+                                                const status = await navigator.permissions.query({ name: 'geolocation' });
+                                                if (status.state === 'denied') {
+                                                    setShowGeoHelp(true);
+                                                    return;
+                                                }
+                                            }
+                                        } catch { }
+                                        setShowCheckIn(true);
+                                    }}
+                                    className="px-3 py-4 mb-0 bg-[#C1FF72] w-[19.83rem] mx-auto text-black border-none rounded-full text-sm font-bold cursor-pointer transition-all hover:transform hover:-translate-y-1 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:transform-none"
+                                >
+                                    {t('common.checkIn')}
+                                </button>
+                            ) : (
+                                <div className="px-3 py-4 mb-0 bg-gray-600 w-[19.83rem] mx-auto text-white border-none rounded-full text-sm font-bold text-center">
+                                    {signTimeRange ? t('common.signTimeNotReached') : t('common.loading')}
+                                </div>
+                            );
+                        })()}
 
                         {/* Check-in Scanner Modal */}
                         {showCheckIn && (
@@ -811,17 +811,18 @@ function HomeContent() {
                                             setIsSending(true);
                                             const { data: { session } } = await supabase.auth.getSession();
                                             if (!session) throw new Error('no-session');
+                                            alert(user?.id + ' ' + code + ' ' + pos.coords.latitude + ' ' + pos.coords.longitude);
                                             const resp = await fetch(`${supabaseUrl}/functions/v1/sign`, {
                                                 method: 'POST',
                                                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-                                                body: JSON.stringify({ qr_code: code, latitude: pos.coords.latitude, longitude: pos.coords.longitude })
+                                                body: JSON.stringify({ user_id: user?.id, qr_code: code, latitude: pos.coords.latitude, longitude: pos.coords.longitude })
                                             });
                                             setIsSending(false);
                                             if (resp.ok) {
                                                 toast.success(t('common.sentSuccess'));
                                                 setShowCheckIn(false);
                                             } else {
-                                                toast.error(t('common.sentFailed'));
+                                                toast.error(t('common.sentFailed') + ': ' + resp.statusText);
                                             }
                                         } catch (err: any) {
                                             setIsSending(false);
