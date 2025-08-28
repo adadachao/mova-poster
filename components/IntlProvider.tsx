@@ -81,7 +81,10 @@ const enMessages = {
     xNamePlaceholder: 'Twitter / WeChat',
     walletAddressPlaceholder: 'Wallet address',
     required: 'This field is required',
-    invalidFormat: 'Invalid format'
+    requiredName: 'Please enter your name',
+    requiredXName: 'Please enter your Twitter or WeChat',
+    requiredWalletAddress: 'Please enter your wallet address',
+    invalidFormat: 'Invalid wallet address format'
   },
   poster: {
     title: 'MOVA Poster Generator',
@@ -178,7 +181,8 @@ const enMessages = {
     serverError: 'Server error, please try again later',
     unauthorized: 'Unauthorized access',
     notFound: 'Page not found',
-    invalidInviteId: 'Invalid invite ID'
+    invalidInviteId: 'Invalid invite ID',
+    userNotLoggedIn: 'User not logged in'
   }
 };
 
@@ -225,7 +229,10 @@ const zhMessages = {
     xNamePlaceholder: '請輸入您的Twitter或微信用戶名',
     walletAddressPlaceholder: '請輸入您的錢包地址',
     required: '此欄位為必填項',
-    invalidFormat: '格式無效'
+    requiredName: '請輸入您的姓名',
+    requiredXName: '請輸入您的Twitter或微信用戶名',
+    requiredWalletAddress: '請輸入您的錢包地址',
+    invalidFormat: '錢包地址格式無效'
   },
   poster: {
     title: 'MOVA 海報生成器',
@@ -322,6 +329,7 @@ const zhMessages = {
     serverError: '伺服器錯誤，請稍後重試',
     unauthorized: '未授權存取',
     notFound: '頁面未找到',
-    invalidInviteId: '無效的邀請ID'
+    invalidInviteId: '無效的邀請ID',
+    userNotLoggedIn: '用戶未登入'
   }
 }; 

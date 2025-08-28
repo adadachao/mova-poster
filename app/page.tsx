@@ -50,7 +50,7 @@ function HomeContent() {
         avatar: '/static/images/guest2.png',
     }, {
         id: 3,
-        name: 'Edward Wu',
+        name: 'Edward Du',
         position: t('guests.ctoPalmGlobal'),
         avatar: '/static/images/guest3.png',
     }, {
@@ -240,7 +240,7 @@ function HomeContent() {
         e.preventDefault();
 
         if (!user) {
-            toast.error(t('errors.networkError'));
+            toast.error(t('errors.userNotLoggedIn'));
             return;
         }
 
@@ -250,18 +250,18 @@ function HomeContent() {
         }
 
         if (!name) {
-            toast.error(t('form.required'));
+            toast.error(t('form.requiredName'));
             return;
         }
 
         if (!xName) {
-            toast.error(t('form.required'));
+            toast.error(t('form.requiredXName'));
             return;
         }
 
 
         if (!walletAddress) {
-            toast.error(t('form.required'));
+            toast.error(t('form.requiredWalletAddress'));
             return;
         }
 
@@ -279,7 +279,8 @@ function HomeContent() {
             const { data: { session } } = await supabase.auth.getSession();
 
             if (!session) {
-                throw new Error('User not logged in');
+                toast.error(t('errors.userNotLoggedIn'));
+                return;
             }
 
             let response = null;
@@ -403,7 +404,8 @@ function HomeContent() {
                 const { data: { session } } = await supabase.auth.getSession();
 
                 if (!session) {
-                    throw new Error('User not logged in');
+                    toast.error(t('errors.userNotLoggedIn'));
+                    return;
                 }
 
                 if (!inviteId) {
@@ -412,18 +414,18 @@ function HomeContent() {
                 }
 
                 if (!name) {
-                    toast.error(t('form.required'));
+                    toast.error(t('form.requiredName'));
                     return;
                 }
 
                 if (!xName) {
-                    toast.error(t('form.required'));
+                    toast.error(t('form.requiredXName'));
                     return;
                 }
 
 
                 if (!walletAddress) {
-                    toast.error(t('form.required'));
+                    toast.error(t('form.requiredWalletAddress'));
                     return;
                 }
 
