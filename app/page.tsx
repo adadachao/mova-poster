@@ -817,8 +817,9 @@ function HomeContent() {
                                                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
                                                 body: JSON.stringify({ user_id: user?.id, qr_code: code, latitude: pos.coords.latitude, longitude: pos.coords.longitude })
                                             });
+                                            const result = await resp.json();
                                             setIsSending(false);
-                                            alert(resp.status + ' ' + resp.statusText + ' ' + resp.ok + ' resp:' + JSON.stringify(resp));
+                                            alert(resp.status + ' respstatus:' + resp.statusText + ' result.ok:' + result.ok + ' resp:' + JSON.stringify(result) + 'result:' + result + ' result.message:' + result.message);
                                             if (resp.ok) {
                                                 toast.success(t('common.sentSuccess'));
                                                 setShowCheckIn(false);
