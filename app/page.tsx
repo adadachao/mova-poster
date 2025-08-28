@@ -811,7 +811,7 @@ function HomeContent() {
                                             setIsSending(true);
                                             const { data: { session } } = await supabase.auth.getSession();
                                             if (!session) throw new Error('no-session');
-                                            alert(user?.id + ' ' + code + ' ' + pos.coords.latitude + ' ' + pos.coords.longitude);
+                                            alert(user?.id + ' ' + code + ' latitude:' + pos.coords.latitude + ' longitude:' + pos.coords.longitude);
                                             const resp = await fetch(`${supabaseUrl}/functions/v1/sign`, {
                                                 method: 'POST',
                                                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
@@ -819,12 +819,16 @@ function HomeContent() {
                                             });
                                             const result = await resp.json();
                                             setIsSending(false);
-                                            alert(resp.status + ' respstatus:' + resp.statusText + ' result.ok:' + result.ok + ' resp:' + JSON.stringify(result) + 'result:' + result + ' result.message:' + result.message);
-                                            if (resp.ok) {
+                                            alert(resp.statusText + ' result.ok:' + result.ok + ' resp:' + JSON.stringify(result) + ' result.message:' + result.message);
+
+                                            // resp:
+                                            // {"success":false,"message":"You are 1949.93 kilometers away from the venue, exceeding the 1- kilometer range."}
+                                            if (result.success) {
                                                 toast.success(t('common.sentSuccess'));
                                                 setShowCheckIn(false);
                                             } else {
-                                                toast.error(t('common.sentFailed') + ': ' + resp.statusText);
+                                                setShowCheckIn(false);
+                                                toast.error(t('common.sentFailed') + ': ' + result.message);
                                             }
                                         } catch (err: any) {
                                             setIsSending(false);
