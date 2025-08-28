@@ -849,6 +849,7 @@ function HomeContent() {
                                 <div className="bg-[#1a1a2e] rounded-2xl p-4 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
                                     <h3 className="text-[#C1FF72] text-lg font-bold mb-3">{t('common.scanQr')}</h3>
                                     <VideoScanner onPermanentDenied={() => setShowCameraHelp(true)} onError={() => toast.error(t('common.cameraDenied'))} onResult={async (code: string) => {
+                                        alert(code);
                                         await submitCheckIn(code);
                                     }} />
                                     {isSending && <div className="text-white text-sm mt-2">{t('common.sending')}</div>}
