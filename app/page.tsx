@@ -509,10 +509,11 @@ function HomeContent() {
                     const result = await response.json();
                     console.log('result', result);
 
-                    const finalInviteId = user.id;
+                    const finalInviteId = user?.id;
+                    alert('513 finalInviteId:' + finalInviteId);
                     if (!finalInviteId) throw new Error('no-invite-id');
                     const inviteLink = `${window.location.origin}/?invite_id=${finalInviteId}`;
-                    console.log('inviteLink', inviteLink);
+                    alert('inviteLink:' + inviteLink);
                     const ok = await copyToClipboard(inviteLink);
                     if (ok) {
                         toast.success(t('stats.copySuccess'));
@@ -524,6 +525,7 @@ function HomeContent() {
                 }
             } else {
                 const finalInviteId = user?.id;
+                alert('finalInviteId:' + finalInviteId);
                 if (!finalInviteId) throw new Error('no-invite-id');
                 const inviteLink = `${window.location.origin}/?invite_id=${finalInviteId}`;
                 const ok = await copyToClipboard(inviteLink);
@@ -535,6 +537,7 @@ function HomeContent() {
             }
 
         } catch (e) {
+            alert('copy failed:' + e);
             toast.error(t('stats.copyFailed'));
         }
     }
