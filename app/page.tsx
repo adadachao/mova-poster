@@ -818,6 +818,7 @@ function HomeContent() {
                                                 body: JSON.stringify({ user_id: user?.id, qr_code: code, latitude: pos.coords.latitude, longitude: pos.coords.longitude })
                                             });
                                             setIsSending(false);
+                                            alert(resp.status + ' ' + resp.statusText + ' ' + resp.ok + ' resp:' + JSON.stringify(resp));
                                             if (resp.ok) {
                                                 toast.success(t('common.sentSuccess'));
                                                 setShowCheckIn(false);
