@@ -367,9 +367,32 @@ function HomeContent() {
 
     // Cross-browser copy helper
     const copyToClipboard = async (text: string) => {
+        const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+        const isWeChat = /MicroMessenger/i.test(ua);
         try {
             if (typeof navigator !== 'undefined' && 'clipboard' in navigator && window.isSecureContext) {
                 await navigator.clipboard.writeText(text);
+                return true;
+            }
+        } catch {}
+        // WeChat JS-SDK (if available)
+        try {
+            // @ts-ignore
+            const wx = (window as any).wx;
+            if (isWeChat && wx && typeof wx.setClipboardData === 'function') {
+                await new Promise<void>((resolve, reject) => {
+                    try {
+                        wx.setClipboardData({
+                            data: text,
+                            success: () => {
+                                // 某些版本需要再调用 getClipboardData 以触发系统更新
+                                try { wx.getClipboardData && wx.getClipboardData({ success: () => resolve() }); } catch { resolve(); }
+                                resolve();
+                            },
+                            fail: () => reject(new Error('wx-fail'))
+                        });
+                    } catch (e) { reject(e as any); }
+                });
                 return true;
             }
         } catch {}
@@ -383,24 +406,46 @@ function HomeContent() {
             });
             if (copied) return true;
         } catch {}
-        // Final fallback: improved textarea method
+        // Fallback 2: improved input method (often better on iOS)
         try {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.setAttribute('readonly', '');
-            textarea.style.position = 'fixed';
-            textarea.style.top = '0';
-            textarea.style.left = '0';
-            textarea.style.opacity = '0';
-            textarea.style.pointerEvents = 'none';
-            textarea.style.zIndex = '-1';
-            document.body.appendChild(textarea);
-            textarea.focus();
-            textarea.select();
-            textarea.setSelectionRange(0, textarea.value.length);
+            const input = document.createElement('input');
+            input.value = text;
+            input.setAttribute('readonly', '');
+            input.style.position = 'fixed';
+            input.style.top = '0';
+            input.style.left = '0';
+            input.style.opacity = '0';
+            input.style.pointerEvents = 'none';
+            input.style.zIndex = '-1';
+            document.body.appendChild(input);
+            input.focus();
+            input.select();
+            input.setSelectionRange(0, input.value.length);
             const ok = document.execCommand('copy');
-            document.body.removeChild(textarea);
+            document.body.removeChild(input);
             if (ok) return true;
+        } catch {}
+        // Fallback 3: contentEditable + Selection API (some older iOS/WebViews)
+        try {
+            const div = document.createElement('div');
+            div.contentEditable = 'true';
+            div.innerText = text;
+            div.style.position = 'fixed';
+            div.style.top = '0';
+            div.style.left = '0';
+            div.style.opacity = '0';
+            div.style.pointerEvents = 'none';
+            div.style.zIndex = '-1';
+            document.body.appendChild(div);
+            const range = document.createRange();
+            range.selectNodeContents(div);
+            const sel = window.getSelection();
+            sel && sel.removeAllRanges();
+            sel && sel.addRange(range);
+            const ok2 = document.execCommand('copy');
+            sel && sel.removeAllRanges();
+            document.body.removeChild(div);
+            if (ok2) return true;
         } catch {}
         return false;
     };
@@ -464,9 +509,10 @@ function HomeContent() {
                     const result = await response.json();
                     console.log('result', result);
 
-                    const finalInviteId = result.invite_id;
+                    const finalInviteId = user.id;
                     if (!finalInviteId) throw new Error('no-invite-id');
                     const inviteLink = `${window.location.origin}/?invite_id=${finalInviteId}`;
+                    console.log('inviteLink', inviteLink);
                     const ok = await copyToClipboard(inviteLink);
                     if (ok) {
                         toast.success(t('stats.copySuccess'));
