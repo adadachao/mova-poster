@@ -488,6 +488,7 @@ function HomeContent() {
             setIsSending(true);
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) throw new Error('no-session');
+            alert('user?.id:' + user?.id + ' code:' + code + ' latitude:' + pos.coords.latitude + ' longitude:' + pos.coords.longitude);
             const resp = await fetch(`${supabaseUrl}/functions/v1/sign`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
