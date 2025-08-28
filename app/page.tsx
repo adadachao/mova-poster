@@ -37,6 +37,10 @@ function HomeContent() {
     const [showGeoHelp, setShowGeoHelp] = useState(false);
     const [isSending, setIsSending] = useState(false);
     const [signTimeRange, setSignTimeRange] = useState<{ starttime: string, endtime: string } | null>(null);
+    // 手动复制兜底
+    const [showManualCopy, setShowManualCopy] = useState(false);
+    const [manualCopyText, setManualCopyText] = useState('');
+    const manualCopyRef = typeof document !== 'undefined' ? (document.createElement('textarea') as HTMLTextAreaElement | null) : null; // placeholder to satisfy types
 
     const guests = [{
         id: 1,
@@ -369,23 +373,19 @@ function HomeContent() {
     const copyToClipboard = async (text: string) => {
         const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
         const isWeChat = /MicroMessenger/i.test(ua);
-        try {
-            if (typeof navigator !== 'undefined' && 'clipboard' in navigator && window.isSecureContext) {
-                await navigator.clipboard.writeText(text);
-                return true;
-            }
-        } catch {}
-        // WeChat JS-SDK (if available)
+        const isIOS = /iP(ad|hone|od)/i.test(ua);
+        const isSafari = /Safari\//.test(ua) && !/Chrome\//.test(ua);
+
+        // Prefer WeChat JS-SDK if available (must be configured via wx.config by host page)
         try {
             // @ts-ignore
-            const wx = (window as any).wx;
+            const wx = (typeof window !== 'undefined' ? (window as any).wx : undefined);
             if (isWeChat && wx && typeof wx.setClipboardData === 'function') {
                 await new Promise<void>((resolve, reject) => {
                     try {
                         wx.setClipboardData({
                             data: text,
                             success: () => {
-                                // 某些版本需要再调用 getClipboardData 以触发系统更新
                                 try { wx.getClipboardData && wx.getClipboardData({ success: () => resolve() }); } catch { resolve(); }
                                 resolve();
                             },
@@ -396,6 +396,35 @@ function HomeContent() {
                 return true;
             }
         } catch {}
+
+        // Safari/iOS often blocks navigator.clipboard; use textarea+execCommand first on these
+        try {
+            if (isIOS || isSafari) {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.readOnly = true;
+                // Place off-screen but selectable. Avoid opacity:0 (iOS sometimes ignores selection)
+                textarea.style.position = 'absolute';
+                textarea.style.left = '-9999px';
+                textarea.style.top = '0';
+                textarea.style.fontSize = '16px'; // prevent iOS zoom
+                document.body.appendChild(textarea);
+                textarea.select();
+                textarea.setSelectionRange(0, textarea.value.length);
+                const ok = document.execCommand('copy');
+                document.body.removeChild(textarea);
+                if (ok) return true;
+            }
+        } catch {}
+
+        // Standard Clipboard API (requires secure context + user gesture)
+        try {
+            if (typeof navigator !== 'undefined' && 'clipboard' in navigator && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+                return true;
+            }
+        } catch {}
+
         // Fallback: use copy-to-clipboard library
         try {
             const mod = await import('copy-to-clipboard');
@@ -406,36 +435,31 @@ function HomeContent() {
             });
             if (copied) return true;
         } catch {}
-        // Fallback 2: improved input method (often better on iOS)
+
+        // Fallback: input + execCommand
         try {
             const input = document.createElement('input');
             input.value = text;
             input.setAttribute('readonly', '');
-            input.style.position = 'fixed';
+            input.style.position = 'absolute';
+            input.style.left = '-9999px';
             input.style.top = '0';
-            input.style.left = '0';
-            input.style.opacity = '0';
-            input.style.pointerEvents = 'none';
-            input.style.zIndex = '-1';
             document.body.appendChild(input);
-            input.focus();
             input.select();
             input.setSelectionRange(0, input.value.length);
             const ok = document.execCommand('copy');
             document.body.removeChild(input);
             if (ok) return true;
         } catch {}
-        // Fallback 3: contentEditable + Selection API (some older iOS/WebViews)
+
+        // Fallback: contentEditable + Selection API
         try {
             const div = document.createElement('div');
             div.contentEditable = 'true';
             div.innerText = text;
-            div.style.position = 'fixed';
+            div.style.position = 'absolute';
+            div.style.left = '-9999px';
             div.style.top = '0';
-            div.style.left = '0';
-            div.style.opacity = '0';
-            div.style.pointerEvents = 'none';
-            div.style.zIndex = '-1';
             document.body.appendChild(div);
             const range = document.createRange();
             range.selectNodeContents(div);
@@ -506,18 +530,17 @@ function HomeContent() {
                 });
 
                 if (response.ok) {
-                    const result = await response.json();
-                    console.log('result', result);
+                    await response.json();
 
                     const finalInviteId = user?.id;
-                    alert('513 finalInviteId:' + finalInviteId);
                     if (!finalInviteId) throw new Error('no-invite-id');
                     const inviteLink = `${window.location.origin}/?invite_id=${finalInviteId}`;
-                    alert('inviteLink:' + inviteLink);
                     const ok = await copyToClipboard(inviteLink);
                     if (ok) {
                         toast.success(t('stats.copySuccess'));
                     } else {
+                        setManualCopyText(inviteLink);
+                        setShowManualCopy(true);
                         toast.error(t('stats.copyFailed'));
                     }
                 } else {
@@ -525,19 +548,28 @@ function HomeContent() {
                 }
             } else {
                 const finalInviteId = user?.id;
-                alert('finalInviteId:' + finalInviteId);
                 if (!finalInviteId) throw new Error('no-invite-id');
                 const inviteLink = `${window.location.origin}/?invite_id=${finalInviteId}`;
                 const ok = await copyToClipboard(inviteLink);
                 if (ok) {
                     toast.success(t('stats.copySuccess'));
                 } else {
+                    setManualCopyText(inviteLink);
+                    setShowManualCopy(true);
                     toast.error(t('stats.copyFailed'));
                 }
             }
 
         } catch (e) {
-            alert('copy failed:' + e);
+            // 在异常时也提供手动复制
+            try {
+                const finalInviteId = user?.id;
+                if (finalInviteId) {
+                    const inviteLink = `${window.location.origin}/?invite_id=${finalInviteId}`;
+                    setManualCopyText(inviteLink);
+                    setShowManualCopy(true);
+                }
+            } catch {}
             toast.error(t('stats.copyFailed'));
         }
     }
@@ -947,6 +979,45 @@ function HomeContent() {
                                         <li>{t('common.geoHelpStepsAndroid')}</li>
                                     </ul>
                                     <button className="mt-3 w-full bg-[#C1FF72] text-black px-4 py-2 rounded-full font-semibold" onClick={() => { setShowGeoHelp(false); setShowCheckIn(true); }}>{t('common.retry')}</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 手动复制兜底弹窗 */}
+                        {showManualCopy && (
+                            <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowManualCopy(false)}>
+                                <div className="bg-[#1a1a2e] rounded-2xl p-4 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+                                    <h3 className="text-[#C1FF72] text-lg font-bold mb-2">{t('stats.copyInviteLink')}</h3>
+                                    <p className="text-white/90 text-sm mb-2">{t('common.longPressToCopy') || '长按下方文本以复制，或全选复制。'}</p>
+                                    <textarea
+                                        defaultValue={manualCopyText}
+                                        onFocus={(e) => { e.currentTarget.select(); }}
+                                        className="w-full bg-[#0f0f1a] text-white text-xs p-3 rounded-lg border border-[#C1FF72]/40"
+                                        rows={3}
+                                        readOnly
+                                    />
+                                    <div className="flex gap-2 mt-3">
+                                        <button
+                                            className="flex-1 bg-[#C1FF72] text-black px-4 py-2 rounded-full font-semibold"
+                                            onClick={async () => {
+                                                const ok = await copyToClipboard(manualCopyText);
+                                                if (ok) {
+                                                    toast.success(t('stats.copySuccess'));
+                                                    setShowManualCopy(false);
+                                                } else {
+                                                    toast.error(t('stats.copyFailed'));
+                                                }
+                                            }}
+                                        >
+                                            {t('common.copyNow') || '复制'}
+                                        </button>
+                                        <button
+                                            className="flex-1 bg-transparent border border-[#C1FF72] text-[#C1FF72] px-4 py-2 rounded-full"
+                                            onClick={() => setShowManualCopy(false)}
+                                        >
+                                            {t('common.close')}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )}
