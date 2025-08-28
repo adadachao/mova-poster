@@ -478,6 +478,37 @@ function HomeContent() {
         }
     }
 
+    // 通用：提交簽到
+    const submitCheckIn = async (code: string) => {
+        try {
+            const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+                if (!navigator.geolocation) return reject(new Error('geo'));
+                navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 });
+            });
+            setIsSending(true);
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) throw new Error('no-session');
+            const resp = await fetch(`${supabaseUrl}/functions/v1/sign`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                body: JSON.stringify({ user_id: user?.id, qr_code: code, latitude: pos.coords.latitude, longitude: pos.coords.longitude })
+            });
+            const result = await resp.json();
+            setIsSending(false);
+            if (result.success) {
+                toast.success(t('common.sentSuccess'));
+                setShowCheckIn(false);
+            } else {
+                setShowCheckIn(false);
+                toast.error(t('common.sentFailed') + ': ' + result.message, { duration: 5000 });
+            }
+        } catch (err: any) {
+            setIsSending(false);
+            if (err?.code === err?.PERMISSION_DENIED) toast.error(t('common.geoDenied'));
+            else toast.error(t('common.sentFailed'));
+        }
+    };
+
     // 如果正在认证中，显示加载状态
     if (authLoading) {
         return (
@@ -767,32 +798,48 @@ function HomeContent() {
                                 new Date(signTimeRange.starttime) <= now &&
                                 now <= new Date(signTimeRange.endtime);
 
-                            return isInTimeRange ? (
-                                <button
-                                    type="button"
-                                    onClick={async () => {
-                                        try {
-                                            // Pre-check geolocation permission; if denied, show help first
-                                            // @ts-ignore
-                                            if (navigator.permissions && navigator.permissions.query) {
+                            return isInTimeRange && (
+                                <>
+                                    <button
+                                        type="button"
+                                        disabled={userInvitedCount <= 1}
+                                        onClick={async () => {
+                                            if (userInvitedCount <= 1) return;
+                                            try {
+                                                // 优先从 URL 参数读取 sign_code
+                                                const urlParams = new URLSearchParams(window.location.search);
+                                                const urlSignCode = urlParams.get('sign_code');
+
+                                                // 预检查定位权限；若已拒绝，先弹出帮助
                                                 // @ts-ignore
-                                                const status = await navigator.permissions.query({ name: 'geolocation' });
-                                                if (status.state === 'denied') {
-                                                    setShowGeoHelp(true);
+                                                if (navigator.permissions && navigator.permissions.query) {
+                                                    // @ts-ignore
+                                                    const status = await navigator.permissions.query({ name: 'geolocation' });
+                                                    if (status.state === 'denied') {
+                                                        setShowGeoHelp(true);
+                                                        return;
+                                                    }
+                                                }
+
+                                                if (urlSignCode) {
+                                                    // 有 sign_code，直接提交，不拉起攝像頭
+                                                    await submitCheckIn(urlSignCode);
                                                     return;
                                                 }
-                                            }
-                                        } catch { }
-                                        setShowCheckIn(true);
-                                    }}
-                                    className="px-3 py-4 mb-0 bg-[#C1FF72] w-[19.83rem] mx-auto text-black border-none rounded-full text-sm font-bold cursor-pointer transition-all hover:transform hover:-translate-y-1 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:transform-none"
-                                >
-                                    {t('common.checkIn')}
-                                </button>
-                            ) : (
-                                <div className="px-3 py-4 mb-0 bg-gray-600 w-[19.83rem] mx-auto text-white border-none rounded-full text-sm font-bold text-center">
-                                    {signTimeRange ? t('common.signTimeNotReached') : t('common.loading')}
-                                </div>
+                                            } catch { }
+                                            // 無 sign_code，打開掃碼
+                                            setShowCheckIn(true);
+                                        }}
+                                        className="px-3 py-4 mb-0 bg-[#C1FF72] w-[19.83rem] mx-auto text-black border-none rounded-full text-sm font-bold cursor-pointer transition-all hover:transform hover:-translate-y-1 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:transform-none"
+                                    >
+                                        {t('common.checkIn')}
+                                    </button>
+                                    {userInvitedCount <= 1 && (
+                                        <div className="text-red-400 text-xs text-center w-[19.83rem] mx-auto">
+                                            {t('common.checkInInviteLimitTip')}
+                                        </div>
+                                    )}
+                                </>
                             );
                         })()}
 
@@ -802,39 +849,7 @@ function HomeContent() {
                                 <div className="bg-[#1a1a2e] rounded-2xl p-4 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
                                     <h3 className="text-[#C1FF72] text-lg font-bold mb-3">{t('common.scanQr')}</h3>
                                     <VideoScanner onPermanentDenied={() => setShowCameraHelp(true)} onError={() => toast.error(t('common.cameraDenied'))} onResult={async (code: string) => {
-                                        try {
-                                            // Geolocation
-                                            const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
-                                                if (!navigator.geolocation) return reject(new Error('geo'));
-                                                navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 });
-                                            });
-                                            setIsSending(true);
-                                            const { data: { session } } = await supabase.auth.getSession();
-                                            if (!session) throw new Error('no-session');
-                                            alert(user?.id + ' ' + code + ' latitude:' + pos.coords.latitude + ' longitude:' + pos.coords.longitude);
-                                            const resp = await fetch(`${supabaseUrl}/functions/v1/sign`, {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-                                                body: JSON.stringify({ user_id: user?.id, qr_code: code, latitude: pos.coords.latitude, longitude: pos.coords.longitude })
-                                            });
-                                            const result = await resp.json();
-                                            setIsSending(false);
-                                            alert(resp.statusText + ' result.ok:' + result.ok + ' resp:' + JSON.stringify(result) + ' result.message:' + result.message);
-
-                                            // resp:
-                                            // {"success":false,"message":"You are 1949.93 kilometers away from the venue, exceeding the 1- kilometer range."}
-                                            if (result.success) {
-                                                toast.success(t('common.sentSuccess'));
-                                                setShowCheckIn(false);
-                                            } else {
-                                                setShowCheckIn(false);
-                                                toast.error(t('common.sentFailed') + ': ' + result.message);
-                                            }
-                                        } catch (err: any) {
-                                            setIsSending(false);
-                                            if (err?.code === err?.PERMISSION_DENIED) toast.error(t('common.geoDenied'));
-                                            else toast.error(t('common.sentFailed'));
-                                        }
+                                        await submitCheckIn(code);
                                     }} />
                                     {isSending && <div className="text-white text-sm mt-2">{t('common.sending')}</div>}
                                     <button className="mt-3 w-full bg-transparent border border-[#C1FF72] text-[#C1FF72] px-4 py-2 rounded-full" onClick={() => setShowCheckIn(false)}>{t('common.close')}</button>
