@@ -586,7 +586,7 @@ function HomeContent() {
                 </div>
 
                 {/* 用户状态提示 */}
-                {user && (
+                {/* {user && (
                     <div className="text-center absolute top-0 right-1/2 translate-x-1/2">
                         {inviteId && (
                             <div className="mt-2">
@@ -599,7 +599,7 @@ function HomeContent() {
                             </div>
                         )}
                     </div>
-                )}
+                )} */}
 
                 {/* 主要内容区域 */}
                 <div className="flex flex-col items-center">
@@ -802,9 +802,9 @@ function HomeContent() {
                                 <>
                                     <button
                                         type="button"
-                                        disabled={userInvitedCount <= 1}
+                                        // disabled={userInvitedCount <= 1}
                                         onClick={async () => {
-                                            if (userInvitedCount <= 1) return;
+                                            // if (userInvitedCount <= 1) return;
                                             try {
                                                 // 优先从 URL 参数读取 sign_code
                                                 const urlParams = new URLSearchParams(window.location.search);
