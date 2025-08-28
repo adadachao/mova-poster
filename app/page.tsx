@@ -6,6 +6,7 @@ import PosterGenerator from '../components/PosterGenerator';
 import toast from 'react-hot-toast';
 import { IntlProvider, useIntl } from '../components/IntlProvider';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import VideoScanner from '../components/VideoScanner';
 
 // Supabase 配置
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://zilwwyrgetjplvwcowjl.supabase.co';
@@ -31,6 +32,11 @@ function HomeContent() {
     const [showViewMyPosterButton, setShowViewMyPosterButton] = useState(false);
     const [showViewMyPoster, setShowViewMyPoster] = useState(false);
     const [myPosterData, setMyPosterData] = useState<any>(null);
+    const [showCheckIn, setShowCheckIn] = useState(false);
+    const [showCameraHelp, setShowCameraHelp] = useState(false);
+    const [showGeoHelp, setShowGeoHelp] = useState(false);
+    const [isSending, setIsSending] = useState(false);
+    const [signTimeRange, setSignTimeRange] = useState<{starttime: string, endtime: string} | null>(null);
 
     const guests = [{
         id: 1,
@@ -141,6 +147,29 @@ function HomeContent() {
 
         signInAnonymously();
     }, [missingInviteId]);
+
+    // 获取签到时间范围
+    useEffect(() => {
+        const getSignTimeRange = async () => {
+            try {
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) return;
+                
+                const resp = await fetch(`${supabaseUrl}/functions/v1/sign_time_range`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${session.access_token}` }
+                });
+                
+                if (resp.ok) {
+                    const timeRange = await resp.json();
+                    setSignTimeRange(timeRange);
+                }
+            } catch (error) {
+                console.error('Failed to get sign time range:', error);
+            }
+        };
+        getSignTimeRange();
+    }, [user]);
 
     // 获取用户邀请数量
     const fetchUserInvitedCount = async () => {
@@ -260,7 +289,7 @@ function HomeContent() {
                 .from('invitation')
                 .select('*')
                 .eq('user_id', user.id);
-                // .eq('inviter_id', inviteId)
+            // .eq('inviter_id', inviteId)
 
             if (invitationData && invitationData.length > 0) {
                 response = await fetch(`${supabaseUrl}/functions/v1/change_info`, {
@@ -381,23 +410,23 @@ function HomeContent() {
                     toast.error(t('errors.invalidInviteId'));
                     return;
                 }
-        
+
                 if (!name) {
                     toast.error(t('form.required'));
                     return;
                 }
-        
+
                 if (!xName) {
                     toast.error(t('form.required'));
                     return;
                 }
-        
-        
+
+
                 if (!walletAddress) {
                     toast.error(t('form.required'));
                     return;
                 }
-        
+
                 if (!isValidWalletAddress(walletAddress)) {
                     toast.error(t('form.invalidFormat'));
                     return;
@@ -544,7 +573,7 @@ function HomeContent() {
                 {/* 主要内容区域 */}
                 <div className="flex flex-col items-center">
                     {/* 标题区域 */}
-                    <div className="text-center mb-38">
+                    <div className="text-center mb-18">
                         <h1 className="text-5xl font-bold flex flex-row items-center justify-center">
                             <span className="text-white">THE </span>
                             <img src="/static/mova-logo.svg" alt="MOVA" width={248} height={92} />
@@ -731,6 +760,110 @@ function HomeContent() {
                                 </button>
                             </div>
                         </div>
+
+                                                    {(() => {
+                                const now = new Date();
+                                const isInTimeRange = signTimeRange && 
+                                    new Date(signTimeRange.starttime) <= now && 
+                                    now <= new Date(signTimeRange.endtime);
+                                
+                                return isInTimeRange ? (
+                                                            <button
+                            type="button"
+                            onClick={async () => {
+                                try {
+                                    // Pre-check geolocation permission; if denied, show help first
+                                    // @ts-ignore
+                                    if (navigator.permissions && navigator.permissions.query) {
+                                        // @ts-ignore
+                                        const status = await navigator.permissions.query({ name: 'geolocation' });
+                                        if (status.state === 'denied') {
+                                            setShowGeoHelp(true);
+                                            return;
+                                        }
+                                    }
+                                } catch {}
+                                setShowCheckIn(true);
+                            }}
+                                        className="px-3 py-4 mb-0 bg-[#C1FF72] w-[19.83rem] mx-auto text-black border-none rounded-full text-sm font-bold cursor-pointer transition-all hover:transform hover:-translate-y-1 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:transform-none"
+                                    >
+                                        {t('common.checkIn')}
+                                    </button>
+                                ) : (
+                                    <div className="px-3 py-4 mb-0 bg-gray-600 w-[19.83rem] mx-auto text-white border-none rounded-full text-sm font-bold text-center">
+                                        {signTimeRange ? t('common.signTimeNotReached') : t('common.loading')}
+                                    </div>
+                                );
+                            })()}
+
+                        {/* Check-in Scanner Modal */}
+                        {showCheckIn && (
+                            <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowCheckIn(false)}>
+                                <div className="bg-[#1a1a2e] rounded-2xl p-4 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+                                    <h3 className="text-[#C1FF72] text-lg font-bold mb-3">{t('common.scanQr')}</h3>
+                                    <VideoScanner onPermanentDenied={() => setShowCameraHelp(true)} onError={() => toast.error(t('common.cameraDenied'))} onResult={async (code: string) => {
+                                        try {
+                                            // Geolocation
+                                            const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+                                                if (!navigator.geolocation) return reject(new Error('geo'));
+                                                navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 });
+                                            });
+                                            setIsSending(true);
+                                            const { data: { session } } = await supabase.auth.getSession();
+                                            if (!session) throw new Error('no-session');
+                                            const resp = await fetch(`${supabaseUrl}/functions/v1/sign`, {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+                                                body: JSON.stringify({ qr_code: code, latitude: pos.coords.latitude, longitude: pos.coords.longitude })
+                                            });
+                                            setIsSending(false);
+                                            if (resp.ok) {
+                                                toast.success(t('common.sentSuccess'));
+                                                setShowCheckIn(false);
+                                            } else {
+                                                toast.error(t('common.sentFailed'));
+                                            }
+                                        } catch (err: any) {
+                                            setIsSending(false);
+                                            if (err?.code === err?.PERMISSION_DENIED) toast.error(t('common.geoDenied'));
+                                            else toast.error(t('common.sentFailed'));
+                                        }
+                                    }} />
+                                    {isSending && <div className="text-white text-sm mt-2">{t('common.sending')}</div>}
+                                    <button className="mt-3 w-full bg-transparent border border-[#C1FF72] text-[#C1FF72] px-4 py-2 rounded-full" onClick={() => setShowCheckIn(false)}>{t('common.close')}</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Camera help modal */}
+                        {showCameraHelp && (
+                            <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowCameraHelp(false)}>
+                                <div className="bg-[#1a1a2e] rounded-2xl p-4 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+                                    <h3 className="text-[#C1FF72] text-lg font-bold mb-2">{t('common.cameraHelpTitle')}</h3>
+                                    <p className="text-white/90 text-sm mb-2">{t('common.cameraHelpBody')}</p>
+                                    <ul className="text-white/70 text-xs list-disc pl-5 space-y-1">
+                                        <li>{t('common.cameraHelpStepsIOS')}</li>
+                                        <li>{t('common.cameraHelpStepsAndroid')}</li>
+                                    </ul>
+                                    <button className="mt-3 w-full bg-[#C1FF72] text-black px-4 py-2 rounded-full font-semibold" onClick={() => { setShowCameraHelp(false); setShowCheckIn(true); }}>{t('common.tryAgain')}</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Geolocation help modal */}
+                        {showGeoHelp && (
+                            <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowGeoHelp(false)}>
+                                <div className="bg-[#1a1a2e] rounded-2xl p-4 w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+                                    <h3 className="text-[#C1FF72] text-lg font-bold mb-2">{t('common.geoHelpTitle')}</h3>
+                                    <p className="text-white/90 text-sm mb-2">{t('common.geoHelpBody')}</p>
+                                    <ul className="text-white/70 text-xs list-disc pl-5 space-y-1">
+                                        <li>{t('common.geoHelpStepsIOS')}</li>
+                                        <li>{t('common.geoHelpStepsAndroid')}</li>
+                                    </ul>
+                                    <button className="mt-3 w-full bg-[#C1FF72] text-black px-4 py-2 rounded-full font-semibold" onClick={() => { setShowGeoHelp(false); setShowCheckIn(true); }}>{t('common.retry')}</button>
+                                </div>
+                            </div>
+                        )}
 
                         {/* 统计区域 */}
                         <div className="flex flex-col items-center justify-center gap-4">
