@@ -70,7 +70,8 @@ const enMessages = {
     sending: 'Sending...',
     sentSuccess: 'Check-in submitted!',
     sentFailed: 'Check-in failed, please try again',
-    checkInInviteLimitTip: 'At least 2 invites are required to check in'
+    checkInInviteLimitTip: 'At least 2 invites are required to check in',
+    alreadyCheckedIn: 'Already checked in'
   },
   form: {
     name: 'Name',
@@ -219,7 +220,8 @@ const zhMessages = {
     sending: '正在提交...',
     sentSuccess: '簽到已提交！',
     sentFailed: '簽到失敗，請重試',
-    checkInInviteLimitTip: '邀請人數不少於 2 人方可簽到'
+    checkInInviteLimitTip: '邀請人數不少於 2 人方可簽到',
+    alreadyCheckedIn: '已簽到'
   },
   form: {
     name: '姓名',

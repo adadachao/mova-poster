@@ -42,6 +42,7 @@ function HomeContent() {
     const [manualCopyText, setManualCopyText] = useState('');
     const manualCopyRef = typeof document !== 'undefined' ? (document.createElement('textarea') as HTMLTextAreaElement | null) : null; // placeholder to satisfy types
     const [canCheckIn, setCanCheckIn] = useState(false);
+    const [isSigned, setIsSigned] = useState(false);
 
     const guests = [{
         id: 1,
@@ -168,6 +169,7 @@ function HomeContent() {
                 if (resp.ok) {
                     const result = await resp.json();
                     setCanCheckIn(result.success === true);
+                    setIsSigned(result.is_signed === true);
                 }
             } catch (error) {
                 console.error('Failed to check sign permission:', error);
@@ -501,6 +503,7 @@ function HomeContent() {
             if (result.success) {
                 toast.success(t('common.sentSuccess'));
                 setShowCheckIn(false);
+                setIsSigned(true);
             } else {
                 setShowCheckIn(false);
                 toast.error(t('common.sentFailed') + ': ' + result.message, { duration: 5000 });
@@ -800,9 +803,9 @@ function HomeContent() {
                                 <>
                                     <button
                                         type="button"
-                                        disabled={userInvitedCount <= 1}
+                                        disabled={userInvitedCount <= 1 || isSigned}
                                         onClick={async () => {
-                                            if (userInvitedCount <= 1) return;
+                                            if (userInvitedCount <= 1 || isSigned) return;
                                             try {
                                                 // 优先从 URL 参数读取 sign_code
                                                 const urlParams = new URLSearchParams(window.location.search);
@@ -832,9 +835,14 @@ function HomeContent() {
                                     >
                                         {t('common.checkIn')}
                                     </button>
-                                    {userInvitedCount <= 1 && (
+                                    {(userInvitedCount <= 1) && (
                                         <div className="text-red-400 text-xs text-center w-[19.83rem] mx-auto">
                                             {t('common.checkInInviteLimitTip')}
+                                        </div>
+                                    )}
+                                    {isSigned && (
+                                        <div className="text-[#C1FF72] text-xs text-center w-[19.83rem] mx-auto">
+                                            {t('common.alreadyCheckedIn')}
                                         </div>
                                     )}
                                 </>
