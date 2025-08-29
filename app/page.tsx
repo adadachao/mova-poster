@@ -41,6 +41,7 @@ function HomeContent() {
     const [showManualCopy, setShowManualCopy] = useState(false);
     const [manualCopyText, setManualCopyText] = useState('');
     const manualCopyRef = typeof document !== 'undefined' ? (document.createElement('textarea') as HTMLTextAreaElement | null) : null; // placeholder to satisfy types
+    const [canCheckIn, setCanCheckIn] = useState(false);
 
     const guests = [{
         id: 1,
@@ -152,27 +153,27 @@ function HomeContent() {
         signInAnonymously();
     }, [missingInviteId]);
 
-    // 获取签到时间范围
+    // 获取签到权限
     useEffect(() => {
-        const getSignTimeRange = async () => {
+        const checkSignPermission = async () => {
             try {
                 const { data: { session } } = await supabase.auth.getSession();
                 if (!session) return;
 
-                const resp = await fetch(`${supabaseUrl}/functions/v1/sign_time_range`, {
+                const resp = await fetch(`${supabaseUrl}/functions/v1/check_sign`, {
                     method: 'GET',
                     headers: { 'Authorization': `Bearer ${session.access_token}` }
                 });
 
                 if (resp.ok) {
-                    const timeRange = await resp.json();
-                    setSignTimeRange(timeRange);
+                    const result = await resp.json();
+                    setCanCheckIn(result.success === true);
                 }
             } catch (error) {
-                console.error('Failed to get sign time range:', error);
+                console.error('Failed to check sign permission:', error);
             }
         };
-        getSignTimeRange();
+        checkSignPermission();
     }, [user]);
 
     // 获取用户邀请数量
@@ -795,12 +796,7 @@ function HomeContent() {
                         </div>
 
                         {(() => {
-                            const now = new Date();
-                            const isInTimeRange = signTimeRange &&
-                                new Date(signTimeRange.starttime) <= now &&
-                                now <= new Date(signTimeRange.endtime);
-
-                            return isInTimeRange && (
+                            return canCheckIn && (
                                 <>
                                     <button
                                         type="button"

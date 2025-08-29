@@ -75,7 +75,7 @@ export default function PosterGenerator({ name, xName, walletAddress, userId, on
       };
 
       // 尝试加载背景图片
-      backgroundImg.src = '/static/model.png';
+      backgroundImg.src = '/static/model_new.png';
     } catch (err) {
       setError('Failed to generate poster');
       setIsGenerating(false);
