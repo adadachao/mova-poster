@@ -833,16 +833,11 @@ function HomeContent() {
                                         }}
                                         className="px-3 py-4 mb-0 bg-[#C1FF72] w-[19.83rem] mx-auto text-black border-none rounded-full text-sm font-bold cursor-pointer transition-all hover:transform hover:-translate-y-1 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:transform-none"
                                     >
-                                        {t('common.checkIn')}
+                                        {isSigned ? t('common.alreadyCheckedIn') : t('common.checkIn')}
                                     </button>
                                     {(userInvitedCount <= 1) && (
                                         <div className="text-red-400 text-xs text-center w-[19.83rem] mx-auto">
                                             {t('common.checkInInviteLimitTip')}
-                                        </div>
-                                    )}
-                                    {isSigned && (
-                                        <div className="text-[#C1FF72] text-xs text-center w-[19.83rem] mx-auto">
-                                            {t('common.alreadyCheckedIn')}
                                         </div>
                                     )}
                                 </>

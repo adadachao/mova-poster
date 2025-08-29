@@ -71,7 +71,7 @@ const enMessages = {
     sentSuccess: 'Check-in submitted!',
     sentFailed: 'Check-in failed, please try again',
     checkInInviteLimitTip: 'At least 2 invites are required to check in',
-    alreadyCheckedIn: 'Already checked in'
+    alreadyCheckedIn: 'Checked in'
   },
   form: {
     name: 'Name',
